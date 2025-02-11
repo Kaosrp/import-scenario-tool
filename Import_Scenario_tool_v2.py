@@ -45,7 +45,15 @@ if option == "Configuração":
 
 elif option == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
-    valor_cif = st.number_input("Informe o Valor CIF da Mercadoria", min_value=0, value=0)
+    st.subheader("Cálculo do Valor CIF")
+    valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
+    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+    taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
+    taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
+
+    valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
+    st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
+
     costs = {}
     for scenario, fields in data.items():
         scenario_data = fields.copy()
@@ -62,7 +70,12 @@ elif option == "Simulador de Cenários":
             "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
             "Taxa DDC": scenario_data.get('Taxa DDC', 0)
         }
-    st.write("### Comparação de Cenários")
-    df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
-    st.dataframe(df)
-    st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+    
+    if costs:
+        st.write("### Comparação de Cenários")
+        df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
+        st.dataframe(df)
+        st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+    else:
+        st.warning("Nenhum cenário foi configurado ainda. Por favor, configure a base de custos na aba Configuração.")
+
