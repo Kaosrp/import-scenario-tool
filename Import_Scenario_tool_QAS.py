@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+from io import BytesIO
+from fpdf import FPDF
 
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -33,8 +35,45 @@ def calculate_total_cost(data, scenario):
                  + custo_icms
     return total_cost, custo_icms
 
+# Função para exportar o DataFrame para Excel
+def to_excel(df: pd.DataFrame):
+    output = BytesIO()
+    # Usamos o ExcelWriter para escrever o DataFrame em memória
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Cenários', index=True)
+        writer.save()
+    processed_data = output.getvalue()
+    return processed_data
+
+# Função para exportar o DataFrame para PDF usando FPDF
+def to_pdf(df: pd.DataFrame):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+
+    # Define as dimensões úteis da página para a tabela
+    effective_page_width = pdf.w - 2 * pdf.l_margin
+    num_cols = len(df.columns)
+    col_width = effective_page_width / num_cols
+    row_height = 8
+
+    # Adiciona o cabeçalho da tabela
+    for col in df.columns:
+        pdf.cell(col_width, row_height, str(col), border=1)
+    pdf.ln(row_height)
+
+    # Adiciona as linhas do DataFrame
+    for index, row in df.iterrows():
+        for item in row:
+            pdf.cell(col_width, row_height, str(item), border=1)
+        pdf.ln(row_height)
+
+    # Gera o PDF para um objeto string (codificado em bytes)
+    pdf_data = pdf.output(dest='S').encode('latin1')
+    return pdf_data
+
 # Título do app
-st.title("QAS - Ferramenta de Análise de Cenários de Importação")
+st.title("Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 # Carrega os dados da base (JSON)
@@ -50,7 +89,7 @@ def save_value(filial, scenario, field, value):
     save_data(data)
 
 if option == "Configuração":
-    st.header("QAS - Configuração de Base de Custos por Filial")
+    st.header("Configuração de Base de Custos por Filial")
     filial_names = ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"]
     # Lista de cenários (sem duplicidade)
     scenarios = [
@@ -132,6 +171,26 @@ elif option == "Simulador de Cenários":
         st.write("### Comparação de Cenários para a Filial Selecionada")
         df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
         st.dataframe(df)
+
         st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+
+        # Botão para exportar a análise para Excel
+        excel_data = to_excel(df)
+        st.download_button(
+            label="Exportar para Excel",
+            data=excel_data,
+            file_name="analise_cenarios.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        # Botão para exportar a análise para PDF
+        pdf_data = to_pdf(df)
+        st.download_button(
+            label="Exportar para PDF",
+            data=pdf_data,
+            file_name="analise_cenarios.pdf",
+            mime="application/pdf"
+        )
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
+
