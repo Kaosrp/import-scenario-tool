@@ -70,7 +70,11 @@ elif option == "Simulador de Cenários":
             "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
             "Taxa DDC": scenario_data.get('Taxa DDC', 0)
         }
-    st.write("### Comparação de Cenários")
-    df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
-    st.dataframe(df)
-    st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+    
+    if costs:
+        st.write("### Comparação de Cenários")
+        df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
+        st.dataframe(df)
+        st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+    else:
+        st.warning("Nenhum cenário foi configurado ainda. Por favor, configure a base de custos na aba Configuração.")
