@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import os
 
-
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
 
@@ -53,7 +52,7 @@ def save_value(filial, scenario, field, value):
 if option == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
     filial_names = ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"]
-    # Ajuste na lista de cenários para evitar duplicidades:
+    # Lista de cenários (sem duplicidade)
     scenarios = [
         "DTA Contêiner - Santos", 
         "DTA Cross Docking - Santos", 
@@ -86,7 +85,7 @@ if option == "Configuração":
                         if field not in data[filial][scenario]:
                             data[filial][scenario][field] = 0
                         current_value = data[filial][scenario][field]
-                        # Chave única estável (não utiliza valores dinâmicos como uuid)
+                        # Chave única estável (sem uso de uuid)
                         unique_key = f"{filial}_{scenario}_{field}"
                         updated_value = st.number_input(f"{field}", min_value=0, value=current_value, key=unique_key)
                         if updated_value != current_value:
@@ -111,6 +110,9 @@ elif option == "Simulador de Cenários":
     costs = {}
     if filial_selected in data:
         for scenario, fields in data[filial_selected].items():
+            # Bypass: ignora o cenário "teste" (case insensitive)
+            if scenario.lower() == "teste":
+                continue
             scenario_data = fields.copy()
             scenario_data['Valor CIF'] = valor_cif
             total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
