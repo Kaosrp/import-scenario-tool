@@ -31,23 +31,33 @@ option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulad
 data = load_data()
 
 if option == "Configuração":
-    st.header("Configuração de Base de Custos")
-    tabs = st.tabs(["DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos", "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Paranaguá"])
-    scenarios = ["DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos", "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Paranaguá"]
-    for tab, scenario in zip(tabs, scenarios):
-        with tab:
-            st.subheader(f"Configuração para {scenario}")
-            if scenario not in data:
-                data[scenario] = {}
-            for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
-                default_value = data[scenario].get(field, 0)
-                data[scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=f"{scenario}_{field}")
+    st.header("Configuração de Base de Custos por Filial")
+    main_tabs = st.tabs(["Cuiabá", "Ribeirão Preto", "Minas Gerais"])
+    filial_names = ["Cuiabá", "Ribeirão Preto", "Minas Gerais"]
+    scenarios = ["DTA Contêiner", "DTA Cross Docking", "DI Contêiner", "DDC"]
+
+    for main_tab, filial in zip(main_tabs, filial_names):
+        with main_tab:
+            st.subheader(f"Configuração de Custos - Filial: {filial}")
+            if filial not in data:
+                data[filial] = {}
+            scenario_tabs = st.tabs(scenarios)
+            for scenario_tab, scenario in zip(scenario_tabs, scenarios):
+                with scenario_tab:
+                    st.subheader(f"{scenario} - {filial}")
+                    key_prefix = f"{filial}_{scenario}"
+                    if scenario not in data[filial]:
+                        data[filial][scenario] = {}
+                    for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
+                        default_value = data[filial][scenario].get(field, 0)
+                        data[filial][scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=f"{key_prefix}_{field}")
     if st.button("Salvar Configuração"):
         save_data(data)
         st.success("Configuração salva com sucesso!")
 
 elif option == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
+    filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá", "Ribeirão Preto", "Minas Gerais"])
     st.subheader("Cálculo do Valor CIF")
     valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
     frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
@@ -58,26 +68,27 @@ elif option == "Simulador de Cenários":
     st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
 
     costs = {}
-    for scenario, fields in data.items():
-        scenario_data = fields.copy()
-        scenario_data['Valor CIF'] = valor_cif
-        total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
-        costs[scenario] = {
-            "Custo Total": total_cost,
-            "ICMS (Calculado)": custo_icms,
-            "Frete Rodoviário": scenario_data.get('Frete rodoviário', 0),
-            "Taxa MAPA": scenario_data.get('Taxa MAPA', 0),
-            "Armazenagem": scenario_data.get('Armazenagem', 0),
-            "Taxas Porto Seco": scenario_data.get('Taxas Porto Seco', 0),
-            "Desova EAD": scenario_data.get('Desova EAD', 0),
-            "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
-            "Taxa DDC": scenario_data.get('Taxa DDC', 0)
-        }
+    if filial_selected in data:
+        for scenario, fields in data[filial_selected].items():
+            scenario_data = fields.copy()
+            scenario_data['Valor CIF'] = valor_cif
+            total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
+            costs[scenario] = {
+                "Custo Total": total_cost,
+                "ICMS (Calculado)": custo_icms,
+                "Frete Rodoviário": scenario_data.get('Frete rodoviário', 0),
+                "Taxa MAPA": scenario_data.get('Taxa MAPA', 0),
+                "Armazenagem": scenario_data.get('Armazenagem', 0),
+                "Taxas Porto Seco": scenario_data.get('Taxas Porto Seco', 0),
+                "Desova EAD": scenario_data.get('Desova EAD', 0),
+                "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
+                "Taxa DDC": scenario_data.get('Taxa DDC', 0)
+            }
     
     if costs:
-        st.write("### Comparação de Cenários")
+        st.write("### Comparação de Cenários para a Filial Selecionada")
         df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
         st.dataframe(df)
-        st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+        st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
     else:
-        st.warning("Nenhum cenário foi configurado ainda. Por favor, configure a base de custos na aba Configuração.")
+        st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
