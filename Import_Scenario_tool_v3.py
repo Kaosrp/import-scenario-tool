@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import hashlib
 
 # Função para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -23,6 +24,11 @@ def calculate_total_cost(data, scenario):
     total_cost = data.get('Valor CIF', 0) + data.get('Frete rodoviário', 0) + data.get('Armazenagem', 0) + data.get('Taxa MAPA', 0)
     total_cost += data.get('Taxas Porto Seco', 0) + data.get('Desova EAD', 0) + data.get('Taxa cross docking', 0) + data.get('Taxa DDC', 0) + custo_icms
     return total_cost, custo_icms
+
+# Função para criar uma chave única usando um hash
+def generate_unique_key(*args):
+    combined_string = "_".join(args)
+    return hashlib.md5(combined_string.encode()).hexdigest()
 
 # Interface Principal
 st.title("Ferramenta de Análise de Cenários de Importação")
@@ -48,12 +54,11 @@ if option == "Configuração":
             for scenario_tab, scenario in zip(scenario_tabs, scenarios):
                 with scenario_tab:
                     st.subheader(f"{scenario} - {filial}")
-                    key_prefix = f"{filial}_{scenario}".replace(" ", "_").replace("-", "_")
                     if scenario not in data[filial]:
                         data[filial][scenario] = {}
                     for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
                         default_value = data[filial][scenario].get(field, 0)
-                        unique_key = f"{key_prefix}_{field}".replace(" ", "_")
+                        unique_key = generate_unique_key(filial, scenario, field)
                         data[filial][scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=unique_key)
     if st.button("Salvar Configuração"):
         save_data(data)
