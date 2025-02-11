@@ -76,7 +76,7 @@ if option == "Configuração":
             scenario_tabs = st.tabs(scenarios)
             for scenario_tab, scenario in zip(scenario_tabs, scenarios):
                 with scenario_tab:
-                    st.sub(f"{scenario} - {filial}")
+                    st.subheader(f"{scenario} - {filial}")
                     if scenario not in data[filial]:
                         data[filial][scenario] = {}
                     # Lista de campos para configuração
@@ -135,3 +135,4 @@ elif option == "Simulador de Cenários":
         st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
+
