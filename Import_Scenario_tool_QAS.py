@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import os
 from io import BytesIO
-from fpdf import FPDF
+
 
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -45,32 +45,6 @@ def to_excel(df: pd.DataFrame):
     processed_data = output.getvalue()
     return processed_data
 
-# Função para exportar o DataFrame para PDF usando FPDF
-def to_pdf(df: pd.DataFrame):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=10)
-
-    # Define as dimensões úteis da página para a tabela
-    effective_page_width = pdf.w - 2 * pdf.l_margin
-    num_cols = len(df.columns)
-    col_width = effective_page_width / num_cols
-    row_height = 8
-
-    # Adiciona o cabeçalho da tabela
-    for col in df.columns:
-        pdf.cell(col_width, row_height, str(col), border=1)
-    pdf.ln(row_height)
-
-    # Adiciona as linhas do DataFrame
-    for index, row in df.iterrows():
-        for item in row:
-            pdf.cell(col_width, row_height, str(item), border=1)
-        pdf.ln(row_height)
-
-    # Gera o PDF para um objeto string (codificado em bytes)
-    pdf_data = pdf.output(dest='S').encode('latin1')
-    return pdf_data
 
 # Título do app
 st.title("Ferramenta de Análise de Cenários de Importação")
@@ -183,14 +157,6 @@ elif option == "Simulador de Cenários":
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-        # Botão para exportar a análise para PDF
-        pdf_data = to_pdf(df)
-        st.download_button(
-            label="Exportar para PDF",
-            data=pdf_data,
-            file_name="analise_cenarios.pdf",
-            mime="application/pdf"
-        )
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
