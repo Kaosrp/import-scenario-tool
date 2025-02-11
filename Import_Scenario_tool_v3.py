@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import uuid
+import hashlib
 
 # Função para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -25,10 +25,10 @@ def calculate_total_cost(data, scenario):
     total_cost += data.get('Taxas Porto Seco', 0) + data.get('Desova EAD', 0) + data.get('Taxa cross docking', 0) + data.get('Taxa DDC', 0) + custo_icms
     return total_cost, custo_icms
 
-# Função para criar uma chave única usando uuid
+# Função para criar uma chave única usando um hash
 def generate_unique_key(*args):
-    combined_string = "_".join(args) + str(uuid.uuid4())
-    return combined_string.replace(" ", "_").replace("-", "_")
+    combined_string = "_".join(args)
+    return hashlib.md5(combined_string.encode()).hexdigest()
 
 # Interface Principal
 st.title("Ferramenta de Análise de Cenários de Importação")
