@@ -34,7 +34,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("QAS - Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 # Carrega os dados da base (JSON)
