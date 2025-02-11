@@ -60,23 +60,8 @@ if option == "Configuração":
                 if scenario not in data[filial]:
                     data[filial][scenario] = {field: 0 for field in default_fields}
 
-            # Permitir adicionar novos cenários
-            new_scenario = st.text_input("Adicionar Novo Cenário", key=f"{filial}_new_scenario")
-            if st.button("Adicionar Cenário", key=f"{filial}_add_scenario") and new_scenario:
-                if new_scenario not in data[filial]:
-                    data[filial][new_scenario] = {}
-                    save_data(data)
-                    st.success(f"Cenário '{new_scenario}' adicionado com sucesso!")
-
             for scenario in data[filial].keys():
                 st.subheader(f"{scenario} - {filial}")
-                new_field = st.text_input(f"Adicionar Novo Campo em {scenario}", key=f"{filial}_{scenario}_new_field")
-                if st.button(f"Adicionar Campo em {scenario}", key=f"{filial}_{scenario}_add_field") and new_field:
-                    if new_field not in data[filial][scenario]:
-                        data[filial][scenario][new_field] = 0
-                        save_data(data)
-                        st.success(f"Campo '{new_field}' adicionado em '{scenario}'!")
-
                 for field, value in data[filial][scenario].items():
                     unique_key = generate_unique_key(filial, scenario, field)
                     updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
@@ -114,4 +99,3 @@ elif option == "Simulador de Cenários":
         st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
-
