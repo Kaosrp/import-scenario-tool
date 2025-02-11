@@ -3,7 +3,7 @@ import pandas as pd
 
 # Função para calcular o custo total por cenário
 def calculate_total_cost(data):
-    total_cost = data['Valor CIF'] + data['Frete rodoviário'] + data['Armazenagem'] + data['Taxa MAPA']
+    total_cost = data.get('Valor CIF', 0) + data.get('Frete rodoviário', 0) + data.get('Armazenagem', 0) + data.get('Taxa MAPA', 0)
     total_cost += data.get('Taxas Porto Seco', 0) + data.get('Desova EAD', 0) + data.get('Taxa cross docking', 0) + data.get('Taxa DDC', 0) + data.get('Custo de ICMS', 0)
     return total_cost
 
@@ -41,3 +41,4 @@ if st.button("Calcular Melhor Cenário"):
     st.write("### Ranking de Custos por Cenário de Importação:")
     st.dataframe(ranking)
     st.write("O melhor cenário está no topo do ranking.")
+
