@@ -4,16 +4,7 @@ import pandas as pd
 # Função para calcular o custo total por cenário
 def calculate_total_cost(data):
     total_cost = data['Valor CIF'] + data['Frete rodoviário'] + data['Armazenagem'] + data['Taxa MAPA']
-    if 'Taxas Porto Seco' in data:
-        total_cost += data['Taxas Porto Seco']
-    if 'Desova EAD' in data:
-        total_cost += data['Desova EAD']
-    if 'Taxa cross docking' in data:
-        total_cost += data['Taxa cross docking']
-    if 'Taxa DDC' in data:
-        total_cost += data['Taxa DDC']
-    if 'Custo de ICMS' in data:
-        total_cost += data['Custo de ICMS']
+    total_cost += data.get('Taxas Porto Seco', 0) + data.get('Desova EAD', 0) + data.get('Taxa cross docking', 0) + data.get('Taxa DDC', 0) + data.get('Custo de ICMS', 0)
     return total_cost
 
 # Streamlit Interface
@@ -37,7 +28,9 @@ for scenario, fields in scenarios.items():
     st.subheader(scenario)
     data = {}
     for field in fields:
-        default_value = 0 if field != "Custo de ICMS" else (18 if "Custo de ICMS" in fields else 0)
+        default_value = 0
+        if field == "Custo de ICMS":
+            default_value = 18 if "DI" in scenario or "DDC" in scenario else 0
         data[field] = st.number_input(f"{field} ({scenario})", min_value=0, value=default_value)
     total_cost = calculate_total_cost(data)
     st.write(f"**Custo total para {scenario}: R$ {total_cost:,.2f}**")
@@ -48,4 +41,3 @@ if st.button("Calcular Melhor Cenário"):
     st.write("### Ranking de Custos por Cenário de Importação:")
     st.dataframe(ranking)
     st.write("O melhor cenário está no topo do ranking.")
-
