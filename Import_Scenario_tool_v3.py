@@ -48,12 +48,13 @@ if option == "Configuração":
             for scenario_tab, scenario in zip(scenario_tabs, scenarios):
                 with scenario_tab:
                     st.subheader(f"{scenario} - {filial}")
-                    key_prefix = f"{filial}_{scenario}"
+                    key_prefix = f"{filial}_{scenario}".replace(" ", "_").replace("-", "_")
                     if scenario not in data[filial]:
                         data[filial][scenario] = {}
                     for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
                         default_value = data[filial][scenario].get(field, 0)
-                        data[filial][scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=f"{key_prefix}_{field}")
+                        unique_key = f"{key_prefix}_{field}".replace(" ", "_")
+                        data[filial][scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=unique_key)
     if st.button("Salvar Configuração"):
         save_data(data)
         st.success("Configuração salva com sucesso!")
