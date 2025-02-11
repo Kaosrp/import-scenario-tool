@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import uuid
 
 # Função para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -58,7 +59,8 @@ if option == "Configuração":
                         if field not in data[filial][scenario]:
                             data[filial][scenario][field] = 0
                         current_value = data[filial][scenario][field]
-                        updated_value = st.number_input(f"{field}", min_value=0, value=current_value, key=f"{filial}_{scenario}_{field}")
+                        unique_key = f"{filial}_{scenario}_{field}_{uuid.uuid4()}"
+                        updated_value = st.number_input(f"{field}", min_value=0, value=current_value, key=unique_key)
                         if updated_value != current_value:
                             save_value(filial, scenario, field, updated_value)
     st.success("Configuração atualizada e salva automaticamente!")
