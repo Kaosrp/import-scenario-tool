@@ -34,7 +34,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("QAS - Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 # Carrega os dados da base (JSON)
@@ -50,7 +50,7 @@ def save_value(filial, scenario, field, value):
     save_data(data)
 
 if option == "Configuração":
-    st.header("Configuração de Base de Custos por Filial")
+    st.header("QAS - Configuração de Base de Custos por Filial")
     filial_names = ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"]
     # Lista de cenários (sem duplicidade)
     scenarios = [
