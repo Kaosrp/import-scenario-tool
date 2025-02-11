@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import uuid
 
 # Função para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -25,16 +24,15 @@ def calculate_total_cost(data, scenario):
     total_cost += data.get('Taxas Porto Seco', 0) + data.get('Desova EAD', 0) + data.get('Taxa cross docking', 0) + data.get('Taxa DDC', 0) + custo_icms
     return total_cost, custo_icms
 
-# Função para criar uma chave única usando uuid
-def generate_unique_key(*args):
-    combined_string = "_".join(args) + str(uuid.uuid4())
-    return combined_string.replace(" ", "_").replace("-", "_")
-
 # Interface Principal
 st.title("Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 data = load_data()
+
+def save_value(filial, scenario, field, value):
+    data[filial][scenario][field] = value
+    save_data(data)
 
 if option == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
@@ -57,12 +55,12 @@ if option == "Configuração":
                     if scenario not in data[filial]:
                         data[filial][scenario] = {}
                     for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
-                        default_value = data[filial][scenario].get(field, 0)
-                        unique_key = generate_unique_key(filial, scenario, field)
-                        updated_value = st.number_input(f"{field}", min_value=0, value=default_value, key=unique_key)
-                        if updated_value != default_value:
-                            data[filial][scenario][field] = updated_value
-                            save_data(data)  # Salvar automaticamente ao alterar o valor
+                        if field not in data[filial][scenario]:
+                            data[filial][scenario][field] = 0
+                        current_value = data[filial][scenario][field]
+                        updated_value = st.number_input(f"{field}", min_value=0, value=current_value, key=f"{filial}_{scenario}_{field}")
+                        if updated_value != current_value:
+                            save_value(filial, scenario, field, updated_value)
     st.success("Configuração atualizada e salva automaticamente!")
 
 elif option == "Simulador de Cenários":
