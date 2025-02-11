@@ -53,11 +53,16 @@ elif option == "Simulador de Cenários":
         total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
         costs[scenario] = {
             "Custo Total": total_cost,
-            "ICMS": custo_icms,
-            "Frete Rodoviário": fields.get('Frete rodoviário', 0),
-            "Taxa MAPA": fields.get('Taxa MAPA', 0),
-            "Armazenagem": fields.get('Armazenagem', 0)
+            "ICMS (Calculado)": custo_icms,
+            "Frete Rodoviário": scenario_data.get('Frete rodoviário', 0),
+            "Taxa MAPA": scenario_data.get('Taxa MAPA', 0),
+            "Armazenagem": scenario_data.get('Armazenagem', 0),
+            "Taxas Porto Seco": scenario_data.get('Taxas Porto Seco', 0),
+            "Desova EAD": scenario_data.get('Desova EAD', 0),
+            "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
+            "Taxa DDC": scenario_data.get('Taxa DDC', 0)
         }
     st.write("### Comparação de Cenários")
-    st.dataframe(pd.DataFrame(costs).T)
-    st.write("O melhor cenário está destacado pelo menor custo total.")
+    df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
+    st.dataframe(df)
+    st.write(f"O melhor cenário é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
