@@ -1,1 +1,37 @@
+import streamlit as st
+import pandas as pd
+
+# Função para calcular o ranking de custos
+def calculate_ranking(cost_data):
+    total_cost_per_scenario = {
+        'Santos_DTA_Conteiner': cost_data['Santos_DTA_Conteiner'].sum(),
+        'Santos_DTA_CrossDocking': cost_data['Santos_DTA_CrossDocking'].sum(),
+        'Santos_DI_Conteiner': cost_data['Santos_DI_Conteiner'].sum(),
+        'Santos_DDC': cost_data['Santos_DDC'].sum(),
+        'Paranagua_DTA_Conteiner': cost_data['Paranagua_DTA_Conteiner'].sum(),
+        'Paranagua_DTA_CrossDocking': cost_data['Paranagua_DTA_CrossDocking'].sum(),
+        'Paranagua_DI_Conteiner': cost_data['Paranagua_DI_Conteiner'].sum(),
+        'Paranagua_DDC': cost_data['Paranagua_DDC'].sum()
+    }
+    ranking = pd.DataFrame(total_cost_per_scenario.items(), columns=['Scenario', 'Total_Cost']).sort_values(by='Total_Cost')
+    return ranking
+
+# Streamlit Interface
+st.title("Ferramenta de Análise de Cenários de Importação")
+
+st.write("Faça o upload da planilha de custos para calcular o melhor cenário de importação.")
+uploaded_file = st.file_uploader("Upload de arquivo Excel", type=["xlsx"])
+
+if uploaded_file:
+    # Carregar a planilha
+    cost_data = pd.read_excel(uploaded_file, sheet_name=0)
+    st.write("### Dados Carregados:")
+    st.dataframe(cost_data.head())
+    
+    # Calcular o ranking
+    ranking = calculate_ranking(cost_data)
+    st.write("### Ranking de Custos por Cenário de Importação:")
+    st.dataframe(ranking)
+
+    st.write("O melhor cenário está no topo do ranking.")
 
