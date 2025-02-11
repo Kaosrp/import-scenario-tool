@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import os
-st.write("Diretório atual:", os.getcwd())
-st.write("Arquivos no diretório:", os.listdir(os.getcwd()))
+
 
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
