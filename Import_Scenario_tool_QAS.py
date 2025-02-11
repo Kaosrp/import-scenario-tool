@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-from io import BytesIO
-
 
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -34,17 +32,6 @@ def calculate_total_cost(data, scenario):
                  + data.get('Taxa DDC', 0) \
                  + custo_icms
     return total_cost, custo_icms
-
-# Função para exportar o DataFrame para Excel
-def to_excel(df: pd.DataFrame):
-    output = BytesIO()
-    # Usamos o ExcelWriter para escrever o DataFrame em memória
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='Cenários', index=True)
-        writer.save()
-    processed_data = output.getvalue()
-    return processed_data
-
 
 # Título do app
 st.title("Ferramenta de Análise de Cenários de Importação")
@@ -145,18 +132,6 @@ elif option == "Simulador de Cenários":
         st.write("### Comparação de Cenários para a Filial Selecionada")
         df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
         st.dataframe(df)
-
         st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
-
-        # Botão para exportar a análise para Excel
-        excel_data = to_excel(df)
-        st.download_button(
-            label="Exportar para Excel",
-            data=excel_data,
-            file_name="analise_cenarios.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
-
