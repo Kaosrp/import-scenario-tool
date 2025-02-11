@@ -32,13 +32,16 @@ data = load_data()
 
 if option == "Configuração":
     st.header("Configuração de Base de Custos")
-    for scenario in ["DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos", "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Paranaguá"]:
-        st.subheader(scenario)
-        if scenario not in data:
-            data[scenario] = {}
-        for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
-            default_value = data[scenario].get(field, 0)
-            data[scenario][field] = st.number_input(f"{field} ({scenario})", min_value=0, value=default_value)
+    tabs = st.tabs(["DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos", "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Paranaguá"])
+    scenarios = ["DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos", "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Paranaguá"]
+    for tab, scenario in zip(tabs, scenarios):
+        with tab:
+            st.subheader(f"Configuração para {scenario}")
+            if scenario not in data:
+                data[scenario] = {}
+            for field in ["Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]:
+                default_value = data[scenario].get(field, 0)
+                data[scenario][field] = st.number_input(f"{field}", min_value=0, value=default_value, key=f"{scenario}_{field}")
     if st.button("Salvar Configuração"):
         save_data(data)
         st.success("Configuração salva com sucesso!")
