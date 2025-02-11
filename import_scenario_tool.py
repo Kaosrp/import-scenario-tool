@@ -1,43 +1,51 @@
 import streamlit as st
 import pandas as pd
 
-# Função para calcular o ranking de custos
-def calculate_ranking(cost_data):
-    total_cost_per_scenario = {
-        'Santos_DTA_Conteiner': cost_data['Santos_DTA_Conteiner'],
-        'Santos_DTA_CrossDocking': cost_data['Santos_DTA_CrossDocking'],
-        'Santos_DI_Conteiner': cost_data['Santos_DI_Conteiner'],
-        'Santos_DDC': cost_data['Santos_DDC'],
-        'Paranagua_DTA_Conteiner': cost_data['Paranagua_DTA_Conteiner'],
-        'Paranagua_DTA_CrossDocking': cost_data['Paranagua_DTA_CrossDocking'],
-        'Paranagua_DI_Conteiner': cost_data['Paranagua_DI_Conteiner'],
-        'Paranagua_DDC': cost_data['Paranagua_DDC']
-    }
-    ranking = pd.DataFrame(total_cost_per_scenario.items(), columns=['Scenario', 'Total_Cost']).sort_values(by='Total_Cost')
-    return ranking
+# Função para calcular o custo total por cenário
+def calculate_total_cost(data):
+    total_cost = data['Valor CIF'] + data['Frete rodoviário'] + data['Armazenagem'] + data['Taxa MAPA']
+    if 'Taxas Porto Seco' in data:
+        total_cost += data['Taxas Porto Seco']
+    if 'Desova EAD' in data:
+        total_cost += data['Desova EAD']
+    if 'Taxa cross docking' in data:
+        total_cost += data['Taxa cross docking']
+    if 'Taxa DDC' in data:
+        total_cost += data['Taxa DDC']
+    if 'Custo de ICMS' in data:
+        total_cost += data['Custo de ICMS']
+    return total_cost
 
 # Streamlit Interface
 st.title("Ferramenta de Análise de Cenários de Importação")
 
-st.write("Preencha os dados abaixo para calcular o melhor cenário de importação.")
+st.write("Preencha os dados para cada cenário de importação e calcule o melhor custo total.")
 
-# Inputs manuais
-data = {
-    'Santos_DTA_Conteiner': st.number_input('Santos - DTA Contêiner', min_value=0, value=0),
-    'Santos_DTA_CrossDocking': st.number_input('Santos - DTA Cross-Docking', min_value=0, value=0),
-    'Santos_DI_Conteiner': st.number_input('Santos - DI Contêiner', min_value=0, value=0),
-    'Santos_DDC': st.number_input('Santos - DDC', min_value=0, value=0),
-    'Paranagua_DTA_Conteiner': st.number_input('Paranaguá - DTA Contêiner', min_value=0, value=0),
-    'Paranagua_DTA_CrossDocking': st.number_input('Paranaguá - DTA Cross-Docking', min_value=0, value=0),
-    'Paranagua_DI_Conteiner': st.number_input('Paranaguá - DI Contêiner', min_value=0, value=0),
-    'Paranagua_DDC': st.number_input('Paranaguá - DDC', min_value=0, value=0)
+scenarios = {
+    "DTA Contêiner - Santos": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD"],
+    "DTA Cross Docking - Santos": ["Valor CIF", "Frete rodoviário", "Taxa MAPA", "Taxa cross docking", "Taxas Porto Seco", "Desova EAD"],
+    "DI Contêiner - Santos": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Custo de ICMS"],
+    "DDC - Santos": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxa DDC", "Custo de ICMS"],
+    "DTA Contêiner - Paranaguá": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxas Porto Seco", "Desova EAD"],
+    "DTA Cross Docking - Paranaguá": ["Valor CIF", "Frete rodoviário", "Taxa MAPA", "Taxa cross docking", "Taxas Porto Seco", "Desova EAD"],
+    "DI Contêiner - Paranaguá": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Custo de ICMS"],
+    "DDC - Paranaguá": ["Valor CIF", "Frete rodoviário", "Armazenagem", "Taxa MAPA", "Taxa DDC", "Custo de ICMS"]
 }
 
+costs = {}
+for scenario, fields in scenarios.items():
+    st.subheader(scenario)
+    data = {}
+    for field in fields:
+        default_value = 0 if field != "Custo de ICMS" else (18 if "Custo de ICMS" in fields else 0)
+        data[field] = st.number_input(f"{field} ({scenario})", min_value=0, value=default_value)
+    total_cost = calculate_total_cost(data)
+    st.write(f"**Custo total para {scenario}: R$ {total_cost:,.2f}**")
+    costs[scenario] = total_cost
+
 if st.button("Calcular Melhor Cenário"):
-    # Calcular o ranking
-    ranking = calculate_ranking(data)
+    ranking = pd.DataFrame(costs.items(), columns=['Scenario', 'Total_Cost']).sort_values(by='Total_Cost')
     st.write("### Ranking de Custos por Cenário de Importação:")
     st.dataframe(ranking)
     st.write("O melhor cenário está no topo do ranking.")
-
 
