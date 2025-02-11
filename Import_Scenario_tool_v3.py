@@ -32,9 +32,12 @@ data = load_data()
 
 if option == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
-    main_tabs = st.tabs(["Cuiabá", "Ribeirão Preto", "Minas Gerais"])
-    filial_names = ["Cuiabá", "Ribeirão Preto", "Minas Gerais"]
-    scenarios = ["DTA Contêiner", "DTA Cross Docking", "DI Contêiner", "DDC"]
+    main_tabs = st.tabs(["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"])
+    filial_names = ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"]
+    scenarios = [
+        "DTA Contêiner - Santos", "DTA Cross Docking - Santos", "DI Contêiner - Santos", "DDC - Santos",
+        "DTA Contêiner - Paranaguá", "DTA Cross Docking - Paranaguá", "DI Contêiner - Paranaguá", "DDC - Santos"
+    ]
 
     for main_tab, filial in zip(main_tabs, filial_names):
         with main_tab:
@@ -57,7 +60,7 @@ if option == "Configuração":
 
 elif option == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
-    filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá", "Ribeirão Preto", "Minas Gerais"])
+    filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"])
     st.subheader("Cálculo do Valor CIF")
     valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
     frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
