@@ -50,7 +50,7 @@ def save_value(filial, scenario, field, value):
     save_data(data)
 
 if option == "Configuração":
-    st.header("Configuração de Base de Custos por Filial")
+    st.header("DEV - Configuração de Base de Custos por Filial")
     filial_names = ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"]
     # Lista de cenários (sem duplicidade)
     scenarios = [
@@ -94,7 +94,7 @@ if option == "Configuração":
     st.success("Configuração atualizada e salva automaticamente!")
 
 elif option == "Simulador de Cenários":
-    st.header("Simulador de Cenários de Importação")
+    st.header("DEV - Simulador de Cenários de Importação")
     filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"])
     
     st.subheader("Cálculo do Valor CIF")
