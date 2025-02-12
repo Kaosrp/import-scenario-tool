@@ -18,28 +18,17 @@ def save_data(data):
     with open(data_file, "w") as f:
         json.dump(data, f, indent=4)
 
-# Campos padrão de configuração
-default_fields = ["Frete rodoviário", "Armazenagem", "Taxa MAPA", 
-                  "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]
-
-# Função para calcular o custo total por cenário
+# Função para calcular o custo total por cenário de forma dinâmica
 def calculate_total_cost(data, scenario):
     # Aplica ICMS para cenários que contenham "DI" ou "DDC" no nome
     icms_rate = 0.18 if "DI" in scenario or "DDC" in scenario else 0.0
     custo_icms = data.get('Valor CIF', 0) * icms_rate
-    total_cost = data.get('Valor CIF', 0) \
-                 + data.get('Frete rodoviário', 0) \
-                 + data.get('Armazenagem', 0) \
-                 + data.get('Taxa MAPA', 0) \
-                 + data.get('Taxas Porto Seco', 0) \
-                 + data.get('Desova EAD', 0) \
-                 + data.get('Taxa cross docking', 0) \
-                 + data.get('Taxa DDC', 0) \
-                 + custo_icms
+    # Soma Valor CIF + todos os demais itens (exceto "Valor CIF") + ICMS
+    total_cost = data.get('Valor CIF', 0) + sum(v for k, v in data.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
 # Título do app
-st.title("dev-Ferramenta de Análise de Cenários de Importação")
+st.title("Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -51,7 +40,7 @@ data = load_data()
 # --- Área de Gerenciamento ---
 if option == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
-    management_tabs = st.tabs(["Filiais", "Cenários"])
+    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
     # --- Gerenciamento de Filiais ---
     with management_tabs[0]:
@@ -63,10 +52,11 @@ if option == "Gerenciamento":
                 if new_filial_stripped in data:
                     st.warning("Filial já existe!")
                 else:
+                    # Ao adicionar uma nova filial, iniciamos com um dicionário vazio
                     data[new_filial_stripped] = {}
                     save_data(data)
                     st.success("Filial adicionada com sucesso!")
-                    st.info("Por favor, recarregue a página para ver as alterações.")
+                    st.info("Recarregue a página para ver as alterações.")
             else:
                 st.warning("Digite um nome válido para a filial.")
         
@@ -81,10 +71,10 @@ if option == "Gerenciamento":
                         del data[filial]
                         save_data(data)
                         st.success(f"Filial '{filial}' excluída.")
-                        st.info("Por favor, recarregue a página para ver as alterações.")
+                        st.info("Recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
-
+    
     # --- Gerenciamento de Cenários ---
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
@@ -104,7 +94,7 @@ if option == "Gerenciamento":
                             del data[filial_select][scenario]
                             save_data(data)
                             st.success(f"Cenário '{scenario}' excluído da filial '{filial_select}'.")
-                            st.info("Por favor, recarregue a página para ver as alterações.")
+                            st.info("Recarregue a página para ver as alterações.")
             else:
                 st.info("Nenhum cenário cadastrado para essa filial.")
             
@@ -115,13 +105,62 @@ if option == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
-                        # Cria cenário com os campos padrão com valor 0
-                        data[filial_select][new_scenario_stripped] = { field: 0 for field in default_fields }
+                        # Ao adicionar um novo cenário, iniciamos com os campos padrão
+                        # (Você pode modificar essa estrutura inicial conforme sua necessidade)
+                        data[filial_select][new_scenario_stripped] = {
+                            "Frete rodoviário": 0,
+                            "Armazenagem": 0,
+                            "Taxa MAPA": 0,
+                            "Taxas Porto Seco": 0,
+                            "Desova EAD": 0,
+                            "Taxa cross docking": 0,
+                            "Taxa DDC": 0
+                        }
                         save_data(data)
                         st.success("Cenário adicionado com sucesso!")
-                        st.info("Por favor, recarregue a página para ver as alterações.")
+                        st.info("Recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
+    
+    # --- Gerenciamento de Campos de Custo ---
+    with management_tabs[2]:
+        st.subheader("Gerenciamento de Campos de Custo")
+        if not data:
+            st.warning("Nenhuma filial cadastrada. Adicione uma filial primeiro.")
+        else:
+            filial_for_field = st.selectbox("Selecione a Filial", list(data.keys()), key="select_filial_for_field")
+            if not data[filial_for_field]:
+                st.info("Nenhum cenário cadastrado para essa filial. Adicione um cenário primeiro.")
+            else:
+                scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="select_scenario_for_field")
+                scenario_fields = data[filial_for_field][scenario_for_field]
+                st.markdown("### Campos existentes:")
+                if scenario_fields:
+                    for field in list(scenario_fields.keys()):
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.write(field)
+                        with col2:
+                            if st.button("Remover", key="remove_field_" + filial_for_field + "_" + scenario_for_field + "_" + field):
+                                del data[filial_for_field][scenario_for_field][field]
+                                save_data(data)
+                                st.success(f"Campo '{field}' removido do cenário '{scenario_for_field}' na filial '{filial_for_field}'.")
+                                st.info("Recarregue a página para ver as alterações.")
+                else:
+                    st.info("Nenhum campo definido para este cenário.")
+                new_field = st.text_input("Novo Campo", key="new_field_input")
+                if st.button("Adicionar Campo"):
+                    new_field_stripped = new_field.strip()
+                    if new_field_stripped:
+                        if new_field_stripped in scenario_fields:
+                            st.warning("Campo já existe nesse cenário!")
+                        else:
+                            data[filial_for_field][scenario_for_field][new_field_stripped] = 0
+                            save_data(data)
+                            st.success("Campo adicionado com sucesso!")
+                            st.info("Recarregue a página para ver as alterações.")
+                    else:
+                        st.warning("Digite um nome válido para o campo.")
 
 # --- Área de Configuração ---
 elif option == "Configuração":
@@ -139,15 +178,16 @@ elif option == "Configuração":
                 for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
                     with scenario_tab:
                         st.subheader(f"{scenario} - {filial}")
-                        for field in default_fields:
-                            if field not in data[filial][scenario]:
-                                data[filial][scenario][field] = 0
-                            current_value = data[filial][scenario][field]
-                            unique_key = f"{filial}_{scenario}_{field}"
-                            updated_value = st.number_input(f"{field}", min_value=0, value=current_value, key=unique_key)
-                            if updated_value != current_value:
-                                data[filial][scenario][field] = updated_value
-                                save_data(data)
+                        # Itera sobre os campos existentes no cenário de forma dinâmica
+                        if data[filial][scenario]:
+                            for field, value in data[filial][scenario].items():
+                                unique_key = f"{filial}_{scenario}_{field}"
+                                updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
+                                if updated_value != value:
+                                    data[filial][scenario][field] = updated_value
+                                    save_data(data)
+                        else:
+                            st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
         st.success("Configuração atualizada e salva automaticamente!")
 
 # --- Área do Simulador de Cenários ---
@@ -176,8 +216,8 @@ elif option == "Simulador de Cenários":
                 # Ignora cenário "teste" (case insensitive)
                 if scenario.lower() == "teste":
                     continue
-                # Considera apenas cenários com ao menos um valor > 0 nos campos de configuração
-                if all(fields.get(campo, 0) == 0 for campo in default_fields):
+                # Considera apenas cenários com ao menos um campo definido (não todos zeros)
+                if not any(v > 0 for v in fields.values()):
                     continue
 
                 scenario_data = fields.copy()
@@ -186,14 +226,9 @@ elif option == "Simulador de Cenários":
                 costs[scenario] = {
                     "Custo Total": total_cost,
                     "ICMS (Calculado)": custo_icms,
-                    "Frete Rodoviário": scenario_data.get('Frete rodoviário', 0),
-                    "Taxa MAPA": scenario_data.get('Taxa MAPA', 0),
-                    "Armazenagem": scenario_data.get('Armazenagem', 0),
-                    "Taxas Porto Seco": scenario_data.get('Taxas Porto Seco', 0),
-                    "Desova EAD": scenario_data.get('Desova EAD', 0),
-                    "Taxa Cross Docking": scenario_data.get('Taxa cross docking', 0),
-                    "Taxa DDC": scenario_data.get('Taxa DDC', 0)
                 }
+                # Inclui os valores individuais de cada campo
+                costs[scenario].update(fields)
         
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
