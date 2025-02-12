@@ -4,6 +4,7 @@ import json
 import os
 import altair as alt
 from datetime import datetime
+import io
 
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
 st.markdown(
@@ -61,14 +62,32 @@ def generate_csv(sim_record):
 
 st.title("Ferramenta de Análise de Cenários de Importação")
 
-# Menu lateral com as opções do sistema
-option = st.sidebar.selectbox("Escolha uma opção", 
-                              ["Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"])
+# ----- Novo Mecanismo de Seleção de Módulo na Sidebar -----
+# Define o módulo padrão se ainda não estiver definido
+if 'module' not in st.session_state:
+    st.session_state.module = "Simulador de Cenários"
 
+st.sidebar.markdown("### Selecione o Módulo:")
+if st.sidebar.button("Simulador de Cenários"):
+    st.session_state.module = "Simulador de Cenários"
+if st.sidebar.button("Gerenciamento"):
+    st.session_state.module = "Gerenciamento"
+if st.sidebar.button("Configuração"):
+    st.session_state.module = "Configuração"
+if st.sidebar.button("Histórico de Simulações"):
+    st.session_state.module = "Histórico de Simulações"
+
+# O módulo selecionado é aquele armazenado no session_state
+module_selected = st.session_state.module
+
+st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
+# --------------------------------------------------------------
+
+# Carrega a base de dados
 data = load_data()
 
-# --- Área de Gerenciamento ---
-if option == "Gerenciamento":
+# ----- Blocos de Módulos -----
+if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
@@ -187,8 +206,7 @@ if option == "Gerenciamento":
                     else:
                         st.warning("Digite um nome válido para o campo.")
 
-# --- Área de Configuração ---
-elif option == "Configuração":
+elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
@@ -214,8 +232,7 @@ elif option == "Configuração":
                             st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
         st.success("Configuração atualizada e salva automaticamente!")
 
-# --- Área do Simulador de Cenários ---
-elif option == "Simulador de Cenários":
+elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
@@ -286,8 +303,7 @@ elif option == "Simulador de Cenários":
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
-# --- Área do Histórico de Simulações ---
-elif option == "Histórico de Simulações":
+elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
     if history:
