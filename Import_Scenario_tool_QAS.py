@@ -60,7 +60,7 @@ def generate_csv(sim_record):
     csv_data = df.to_csv(index=True)
     return csv_data.encode('utf-8')
 
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("QAS-Ferramenta de Análise de Cenários de Importação")
 
 # ----- Novo Mecanismo de Seleção de Módulo na Sidebar -----
 # Define o módulo padrão se ainda não estiver definido
