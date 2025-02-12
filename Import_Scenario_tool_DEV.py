@@ -127,7 +127,6 @@ if option == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
-                        # Estrutura padrão ao adicionar um novo cenário
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
                             "Armazenagem": 0,
@@ -216,6 +215,9 @@ elif option == "Simulador de Cenários":
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
     else:
+        # Campo para informar o nome do processo
+        process_name = st.text_input("Nome do Processo", key="process_name")
+        
         filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
         st.subheader("Cálculo do Valor CIF")
         col1, col2 = st.columns(2)
@@ -227,6 +229,7 @@ elif option == "Simulador de Cenários":
             taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
         valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
         st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
+        
         costs = {}
         if filial_selected in data:
             for scenario, fields in data[filial_selected].items():
@@ -258,22 +261,26 @@ elif option == "Simulador de Cenários":
             best_cost = df.iloc[0]['Custo Total']
             st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {best_cost:,.2f}**.")
             if st.button("Salvar Simulação no Histórico"):
-                history = load_history()
-                simulation_record = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "filial": filial_selected,
-                    "valor_fob_usd": valor_fob_usd,
-                    "frete_internacional_usd": frete_internacional_usd,
-                    "taxas_frete_brl": taxas_frete_brl,
-                    "taxa_cambio": taxa_cambio,
-                    "valor_cif": valor_cif,
-                    "best_scenario": best_scenario,
-                    "best_cost": best_cost,
-                    "results": costs
-                }
-                history.append(simulation_record)
-                save_history(history)
-                st.success("Simulação salva no histórico com sucesso!")
+                if not process_name:
+                    st.warning("Por favor, informe o nome do processo antes de salvar a simulação.")
+                else:
+                    history = load_history()
+                    simulation_record = {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "process_name": process_name,
+                        "filial": filial_selected,
+                        "valor_fob_usd": valor_fob_usd,
+                        "frete_internacional_usd": frete_internacional_usd,
+                        "taxas_frete_brl": taxas_frete_brl,
+                        "taxa_cambio": taxa_cambio,
+                        "valor_cif": valor_cif,
+                        "best_scenario": best_scenario,
+                        "best_cost": best_cost,
+                        "results": costs
+                    }
+                    history.append(simulation_record)
+                    save_history(history)
+                    st.success("Simulação salva no histórico com sucesso!")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
@@ -290,14 +297,14 @@ elif option == "Histórico de Simulações":
             x=alt.X("timestamp:T", title="Data e Hora"),
             y=alt.Y("best_cost:Q", title="Custo do Melhor Cenário (R$)"),
             color=alt.Color("filial:N", title="Filial"),
-            tooltip=["timestamp:T", "filial:N", "best_scenario:N", "best_cost:Q"]
+            tooltip=["timestamp:T", "filial:N", "best_scenario:N", "best_cost:Q", "process_name:N"]
         ).properties(width=700, height=300, title="Tendência do Custo do Melhor Cenário ao Longo do Tempo")
         st.altair_chart(chart, use_container_width=True)
         st.markdown("### Registros de Simulação")
         for i, record in df_history.iterrows():
             expander_title = (
-                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Filial: {record['filial']} | "
-                f"Melhor: {record['best_scenario']} | Custo: R$ {record['best_cost']:,.2f}"
+                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Processo: {record.get('process_name','')} | "
+                f"Filial: {record['filial']} | Melhor: {record['best_scenario']} | Custo: R$ {record['best_cost']:,.2f}"
             )
             with st.expander(expander_title):
                 st.markdown("**Parâmetros de Entrada:**")
@@ -318,4 +325,3 @@ elif option == "Histórico de Simulações":
                 st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
-
