@@ -4,7 +4,6 @@ import json
 import os
 import altair as alt
 from datetime import datetime
-from fpdf import FPDF
 import io
 
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
@@ -53,35 +52,6 @@ def calculate_total_cost(data_dict, scenario):
     custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
-
-# Função para gerar PDF para um registro de simulação
-def generate_pdf(sim_record):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    # Título
-    processo = sim_record.get("processo_nome", "N/A")
-    pdf.cell(0, 10, f"Simulação - {processo}", ln=True, align="C")
-    pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"Data/Hora: {sim_record['timestamp']}", ln=True)
-    pdf.cell(0, 10, f"Filial: {sim_record['filial']}", ln=True)
-    pdf.cell(0, 10, f"Valor FOB (USD): {sim_record['valor_fob_usd']}", ln=True)
-    pdf.cell(0, 10, f"Frete Internacional (USD): {sim_record['frete_internacional_usd']}", ln=True)
-    pdf.cell(0, 10, f"Taxas do Frete (BRL): {sim_record['taxas_frete_brl']}", ln=True)
-    pdf.cell(0, 10, f"Taxa de Câmbio: {sim_record['taxa_cambio']}", ln=True)
-    pdf.cell(0, 10, f"Valor CIF Calculado: {sim_record['valor_cif']}", ln=True)
-    pdf.ln(5)
-    pdf.cell(0, 10, f"Melhor Cenário: {sim_record['best_scenario']}", ln=True)
-    pdf.cell(0, 10, f"Custo Total: R$ {sim_record['best_cost']:,.2f}", ln=True)
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "Resultados Completos:", ln=True)
-    pdf.set_font("Arial", '', 10)
-    results_text = json.dumps(sim_record["results"], indent=4, ensure_ascii=False)
-    pdf.multi_cell(0, 5, results_text)
-    pdf_output = pdf.output(dest="S").encode("latin1")
-    return pdf_output
 
 st.title("Ferramenta de Análise de Cenários de Importação")
 
@@ -339,10 +309,7 @@ elif option == "Histórico de Simulações":
                 st.write(f"- **Custo Total:** R$ {record['best_cost']:,.2f}")
                 st.markdown("**Resultados Completos:**")
                 st.code(json.dumps(record["results"], indent=4, ensure_ascii=False))
-                # Botão para exportar este registro para PDF
-                pdf_bytes = generate_pdf(record)
-                file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.pdf"
-                st.download_button("Exportar para PDF", data=pdf_bytes, file_name=file_name, mime="application/pdf")
+             
         if st.button("Limpar Histórico"):
             if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
