@@ -6,7 +6,7 @@ import altair as alt
 from datetime import datetime
 from streamlit_option_menu import option_menu  # Menu lateral com ícones
 
-# Injeção de CSS para ajuste de layout
+# Injeção de CSS para scroll horizontal na lista de abas
 st.markdown(
     """
     <style>
@@ -18,11 +18,11 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Arquivos de dados
+# Arquivos para os dados e para o histórico de simulações
 data_file = "cost_config.json"
 history_file = "simulation_history.json"
 
-# Funções para carregar e salvar dados
+# Funções para carregar/salvar dados
 def load_data():
     if os.path.exists(data_file):
         with open(data_file, "r") as f:
@@ -43,13 +43,14 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
+# Função para calcular custo total e ICMS
 def calculate_total_cost(data_dict, scenario):
     icms_rate = 0.18 if ("DI" in scenario or "DDC" in scenario) else 0.0
     custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
-# Menu lateral com ícones
+# --- Interface principal ---
 with st.sidebar:
     option = option_menu(
         "Menu Principal",
@@ -65,7 +66,6 @@ data = load_data()
 if option == "Dashboard":
     st.title("Dashboard - Resumo de Simulações")
     history = load_history()
-    
     if history:
         df_history = pd.DataFrame(history)
         df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
