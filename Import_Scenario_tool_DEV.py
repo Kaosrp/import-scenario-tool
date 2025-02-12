@@ -34,7 +34,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("DEV - Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 # Carrega os dados da base (JSON)
@@ -94,7 +94,7 @@ if option == "Configuração":
     st.success("Configuração atualizada e salva automaticamente!")
 
 elif option == "Simulador de Cenários":
-    st.header("DEV - Simulador de Cenários de Importação")
+    st.header("Simulador de Cenários de Importação")
     filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"])
     
     st.subheader("Cálculo do Valor CIF")
