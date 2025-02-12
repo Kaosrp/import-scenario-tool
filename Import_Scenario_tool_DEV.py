@@ -4,6 +4,7 @@ import json
 import os
 import altair as alt
 from datetime import datetime
+import io
 
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
 st.markdown(
@@ -46,11 +47,20 @@ def save_history(history):
 
 # Função de cálculo do custo total de forma dinâmica
 def calculate_total_cost(data_dict, scenario):
-    # Aplica ICMS se o nome do cenário contiver "DI" ou "DDC"
     icms_rate = 0.18 if ("DI" in scenario or "DDC" in scenario) else 0.0
     custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
+
+# Função para gerar o arquivo Excel com os resultados da simulação
+def generate_excel(sim_record):
+    results = sim_record["results"]
+    # Converte o dicionário de resultados para DataFrame e transpõe para melhor visualização
+    df = pd.DataFrame(results).T
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=True, sheet_name="Resultados")
+    return output.getvalue()
 
 st.title("Ferramenta de Análise de Cenários de Importação")
 
@@ -58,7 +68,6 @@ st.title("Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", 
                               ["Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"])
 
-# Carrega a base de dados
 data = load_data()
 
 # --- Área de Gerenciamento ---
@@ -234,7 +243,6 @@ elif option == "Simulador de Cenários":
             for scenario, fields in data[filial_selected].items():
                 if scenario.lower() == "teste":
                     continue
-                # Considera apenas cenários com ao menos um campo com valor > 0
                 if not any(v > 0 for v in fields.values()):
                     continue
                 scenario_data = fields.copy()
@@ -279,14 +287,13 @@ elif option == "Simulador de Cenários":
                 st.success("Simulação salva no histórico com sucesso!")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
-
+            
 # --- Área do Histórico de Simulações ---
 elif option == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
     if history:
         df_history = pd.DataFrame(history)
-        # Converte o timestamp para datetime para exibição
         df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
         df_history = df_history.sort_values("timestamp", ascending=False)
         st.markdown("### Registros de Simulação")
@@ -307,7 +314,13 @@ elif option == "Histórico de Simulações":
                 st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
                 st.write(f"- **Custo Total:** R$ {record['best_cost']:,.2f}")
                 st.markdown("**Resultados Completos:**")
-                st.code(json.dumps(record["results"], indent=4, ensure_ascii=False))
+                # Exibe os resultados completos como uma tabela para melhor visualização
+                results_df = pd.DataFrame(record["results"]).T
+                st.dataframe(results_df)
+                # Botão para exportar os resultados para Excel
+                excel_bytes = generate_excel(record)
+                file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.xlsx"
+                st.download_button("Exportar Resultados para Excel", data=excel_bytes, file_name=file_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         if st.button("Limpar Histórico"):
             if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
