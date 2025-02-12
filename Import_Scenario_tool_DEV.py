@@ -45,31 +45,13 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
-# Função de cálculo do custo total usando a nova estrutura para campos
-def calculate_total_cost_extended(config, base_values):
-    """
-    config: dicionário de campos do cenário. Cada campo pode ser:
-      - Um número (valor fixo) para compatibilidade, ou
-      - Um dicionário com chaves:
-            "type": "fixed" ou "percentage"
-            Se "fixed", deve conter "value".
-            Se "percentage", deve conter "rate" (em decimal) e "base" (string com o nome da base).
-    base_values: dicionário com as bases de cálculo, ex.: {"Valor CIF": valor_cif, "Valor FOB": valor_fob_usd, ...}
-    """
-    extra = 0
-    for field, conf in config.items():
-        # Se não for dicionário, trate como valor fixo
-        if not isinstance(conf, dict):
-            extra += conf
-        else:
-            if conf.get("type") == "fixed":
-                extra += conf.get("value", 0)
-            elif conf.get("type") == "percentage":
-                base = conf.get("base")
-                rate = conf.get("rate", 0)
-                extra += base_values.get(base, 0) * rate
-    # Aqui, decidimos somar o "Valor CIF" (que está na base_values) com os demais custos
-    return base_values.get("Valor CIF", 0) + extra
+# Função de cálculo do custo total de forma dinâmica
+def calculate_total_cost(data_dict, scenario):
+    # Aplica ICMS se o nome do cenário contiver "DI" ou "DDC"
+    icms_rate = 0.18 if ("DI" in scenario or "DDC" in scenario) else 0.0
+    custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
+    total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
+    return total_cost, custo_icms
 
 # Função para gerar CSV com os resultados da simulação
 def generate_csv(sim_record):
@@ -78,11 +60,12 @@ def generate_csv(sim_record):
     csv_data = df.to_csv(index=True)
     return csv_data.encode('utf-8')
 
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("QAS-Ferramenta de Análise de Cenários de Importação")
 
-# ----- Mecanismo de Seleção de Módulo na Sidebar com Botões -----
+# ----- Novo Mecanismo de Seleção de Módulo na Sidebar -----
+# Define o módulo padrão se ainda não estiver definido
 if 'module' not in st.session_state:
-    st.session_state.module = "Simulador de Cenários"  # Módulo padrão
+    st.session_state.module = "Simulador de Cenários"
 
 st.sidebar.markdown("### Selecione o Módulo:")
 if st.sidebar.button("Simulador de Cenários"):
@@ -94,15 +77,15 @@ if st.sidebar.button("Configuração"):
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
+# O módulo selecionado é aquele armazenado no session_state
 module_selected = st.session_state.module
-st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
-# ----------------------------------------------------------------------
+
+# --------------------------------------------------------------
 
 # Carrega a base de dados
 data = load_data()
 
-# ----------------------------------------------------------------------
-# Área de Gerenciamento (não sofreu modificações relativas aos novos cálculos)
+# ----- Blocos de Módulos -----
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
@@ -167,11 +150,9 @@ if module_selected == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
-                        # Configuração padrão para um novo cenário (todos os campos com valores fixos zero)
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
-                            "ICMS": 0,         # Este campo poderá ser alterado para porcentagem na configuração
-                            "IPI": 0,          # Idem
+                            "Armazenagem": 0,
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
@@ -224,11 +205,8 @@ if module_selected == "Gerenciamento":
                     else:
                         st.warning("Digite um nome válido para o campo.")
 
-# ----- Área de Configuração com Novos Inputs para Tipo de Campo (Fixed ou Percentage) -----
 elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
-    # Define as bases disponíveis para cálculos percentuais
-    BASE_OPTIONS = ["Valor CIF", "Valor FOB", "Frete Internacional"]
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
     else:
@@ -242,44 +220,17 @@ elif module_selected == "Configuração":
                 for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
                     with scenario_tab:
                         st.subheader(f"{scenario} - {filial}")
-                        for field, value in data[filial][scenario].items():
-                            # Se o campo já for um dict, extraia os dados; caso contrário, trate como "fixed" por padrão
-                            if isinstance(value, dict):
-                                current_type = value.get("type", "fixed")
-                                current_fixed = value.get("value", 0) if current_type == "fixed" else 0
-                                current_rate = value.get("rate", 0) if current_type == "percentage" else 0
-                                current_base = value.get("base", BASE_OPTIONS[0]) if current_type == "percentage" else BASE_OPTIONS[0]
-                            else:
-                                current_type = "fixed"
-                                current_fixed = value
-                                current_rate = 0
-                                current_base = BASE_OPTIONS[0]
-                            colA, colB = st.columns([2, 2])
-                            with colA:
-                                tipo = st.radio(f"Tipo para {field}", options=["fixed", "percentage"],
-                                                index=0 if current_type=="fixed" else 1,
-                                                key=f"tipo_{filial}_{scenario}_{field}")
-                            if tipo == "fixed":
-                                novo_valor = st.number_input(f"Valor Fixo para {field}",
-                                                             min_value=0.0,
-                                                             value=current_fixed,
-                                                             key=f"fixo_{filial}_{scenario}_{field}")
-                                data[filial][scenario][field] = {"type": "fixed", "value": novo_valor}
-                            else:
-                                nova_taxa = st.number_input(f"Taxa (%) para {field}",
-                                                            min_value=0.0,
-                                                            value=current_rate * 100,
-                                                            step=0.1,
-                                                            key=f"taxa_{filial}_{scenario}_{field}")
-                                nova_base = st.selectbox(f"Base para {field}",
-                                                         options=BASE_OPTIONS,
-                                                         index=BASE_OPTIONS.index(current_base) if current_base in BASE_OPTIONS else 0,
-                                                         key=f"base_{filial}_{scenario}_{field}")
-                                data[filial][scenario][field] = {"type": "percentage", "rate": nova_taxa/100.0, "base": nova_base}
-        save_data(data)
+                        if data[filial][scenario]:
+                            for field, value in data[filial][scenario].items():
+                                unique_key = f"{filial}_{scenario}_{field}"
+                                updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
+                                if updated_value != value:
+                                    data[filial][scenario][field] = updated_value
+                                    save_data(data)
+                        else:
+                            st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
         st.success("Configuração atualizada e salva automaticamente!")
 
-# ----- Área do Simulador de Cenários usando a nova estrutura para cálculo -----
 elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     if not data:
@@ -300,44 +251,22 @@ elif module_selected == "Simulador de Cenários":
         # Campo para informar o nome do processo
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
         
-        # Cria um dicionário de bases para o cálculo percentual
-        base_values = {
-            "Valor CIF": valor_cif,
-            "Valor FOB": valor_fob_usd,
-            "Frete Internacional": frete_internacional_usd
-        }
-        
         costs = {}
         if filial_selected in data:
-            for scenario, config in data[filial_selected].items():
+            for scenario, fields in data[filial_selected].items():
                 if scenario.lower() == "teste":
                     continue
-                # Verifica se ao menos um campo gera custo > 0
-                tem_valor = False
-                for field, conf in config.items():
-                    if isinstance(conf, dict):
-                        if conf.get("type") == "fixed" and conf.get("value", 0) > 0:
-                            tem_valor = True
-                        elif conf.get("type") == "percentage" and base_values.get(conf.get("base"), 0) * conf.get("rate", 0) > 0:
-                            tem_valor = True
-                    elif conf > 0:
-                        tem_valor = True
-                if not tem_valor:
+                # Considera apenas cenários com ao menos um campo com valor > 0
+                if not any(v > 0 for v in fields.values()):
                     continue
-                total_cost = calculate_total_cost_extended(config, base_values)
-                costs[scenario] = {"Custo Total": total_cost}
-                # Para detalhar, calcula cada campo individualmente:
-                for field, conf in config.items():
-                    if isinstance(conf, dict):
-                        if conf.get("type") == "fixed":
-                            field_val = conf.get("value", 0)
-                        elif conf.get("type") == "percentage":
-                            field_val = base_values.get(conf.get("base"), 0) * conf.get("rate", 0)
-                        else:
-                            field_val = conf
-                    else:
-                        field_val = conf
-                    costs[scenario][field] = field_val
+                scenario_data = fields.copy()
+                scenario_data['Valor CIF'] = valor_cif
+                total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
+                costs[scenario] = {
+                    "Custo Total": total_cost,
+                    "ICMS (Calculado)": custo_icms,
+                }
+                costs[scenario].update(fields)
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
@@ -346,7 +275,7 @@ elif module_selected == "Simulador de Cenários":
             chart = alt.Chart(chart_data).mark_bar().encode(
                 x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
                 y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
-                tooltip=['Cenário', 'Custo Total']
+                tooltip=['Cenário', 'Custo Total', 'ICMS (Calculado)']
             ).properties(title="Comparativo de Custos por Cenário", width=700, height=400)
             st.altair_chart(chart, use_container_width=True)
             best_scenario = df.index[0]
@@ -373,7 +302,6 @@ elif module_selected == "Simulador de Cenários":
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
-# ----- Área do Histórico de Simulações com exportação simples para CSV -----
 elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
@@ -399,8 +327,10 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
                 st.write(f"- **Custo Total:** R$ {record['best_cost']:,.2f}")
                 st.markdown("**Resultados Completos:**")
+                # Exibe os resultados completos como uma tabela para melhor visualização
                 results_df = pd.DataFrame(record["results"]).T
                 st.dataframe(results_df)
+                # Botão para exportar os resultados para CSV
                 csv_bytes = generate_csv(record)
                 file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.csv"
                 st.download_button("Exportar Resultados para CSV", data=csv_bytes, file_name=file_name, mime="text/csv")
