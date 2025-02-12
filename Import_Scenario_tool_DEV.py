@@ -4,9 +4,8 @@ import json
 import os
 import altair as alt
 from datetime import datetime
-from streamlit_option_menu import option_menu  # Menu com ícones
 
-# Injeção de CSS para scroll horizontal em abas
+# Injeção de CSS para habilitar scroll horizontal na lista de abas
 st.markdown(
     """
     <style>
@@ -18,11 +17,11 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Arquivos para armazenar dados
+# Arquivos para os dados e para o histórico de simulações
 data_file = "cost_config.json"
 history_file = "simulation_history.json"
 
-# Funções para carregar/salvar dados
+# Funções para carregar/salvar a base de dados de custos
 def load_data():
     if os.path.exists(data_file):
         with open(data_file, "r") as f:
@@ -50,16 +49,13 @@ def calculate_total_cost(data_dict, scenario):
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
-# --- Interface principal ---
-with st.sidebar:
-    option = option_menu(
-        "Menu Principal",
-        ["Dashboard", "Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"],
-        icons=["bar-chart", "gear", "sliders", "calculator", "clock-history"],
-        menu_icon="menu-app",
-        default_index=0,
-    )
+# Menu lateral com as opções do sistema
+option = st.sidebar.selectbox(
+    "Escolha uma opção", 
+    ["Dashboard", "Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"]
+)
 
+# Carrega a base de dados
 data = load_data()
 
 # --- Dashboard ---
@@ -70,6 +66,7 @@ if option == "Dashboard":
         df_history = pd.DataFrame(history)
         df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
         st.subheader("Simulações Recentes")
+        
         last_simulations = df_history.sort_values("timestamp", ascending=False).head(5)
         st.dataframe(last_simulations[["timestamp", "filial", "processo_nome", "best_scenario", "best_cost"]])
         
@@ -88,7 +85,8 @@ elif option == "Gerenciamento":
     st.title("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
-    with management_tabs[0]:  # Gerenciamento de Filiais
+    # Gerenciamento de Filiais
+    with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial")
         if st.button("Adicionar Filial"):
@@ -99,7 +97,7 @@ elif option == "Gerenciamento":
                 else:
                     data[new_filial_stripped] = {}
                     save_data(data)
-                    st.toast("Filial adicionada com sucesso!")
+                    st.success("Filial adicionada com sucesso!")
             else:
                 st.warning("Digite um nome válido para a filial.")
 
@@ -120,7 +118,7 @@ elif option == "Configuração":
                     submitted = st.form_submit_button("Salvar Alterações")
                     if submitted:
                         save_data(data)
-                        st.toast(f"Configuração de {scenario} salva com sucesso!")
+                        st.success(f"Configuração de {scenario} salva com sucesso!")
 
 # --- Simulador de Cenários ---
 elif option == "Simulador de Cenários":
