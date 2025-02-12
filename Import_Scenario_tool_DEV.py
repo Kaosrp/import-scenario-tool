@@ -19,16 +19,16 @@ def save_data(data):
         json.dump(data, f, indent=4)
 
 # Função para calcular o custo total por cenário de forma dinâmica
-def calculate_total_cost(data, scenario):
+def calculate_total_cost(data_dict, scenario):
     # Aplica ICMS para cenários que contenham "DI" ou "DDC" no nome
     icms_rate = 0.18 if "DI" in scenario or "DDC" in scenario else 0.0
-    custo_icms = data.get('Valor CIF', 0) * icms_rate
+    custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
     # Soma Valor CIF + todos os demais itens (exceto "Valor CIF") + ICMS
-    total_cost = data.get('Valor CIF', 0) + sum(v for k, v in data.items() if k != 'Valor CIF') + custo_icms
+    total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
 # Título do app
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("DEV - Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -52,7 +52,6 @@ if option == "Gerenciamento":
                 if new_filial_stripped in data:
                     st.warning("Filial já existe!")
                 else:
-                    # Ao adicionar uma nova filial, iniciamos com um dicionário vazio
                     data[new_filial_stripped] = {}
                     save_data(data)
                     st.success("Filial adicionada com sucesso!")
@@ -105,8 +104,7 @@ if option == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
-                        # Ao adicionar um novo cenário, iniciamos com os campos padrão
-                        # (Você pode modificar essa estrutura inicial conforme sua necessidade)
+                        # Ao adicionar um novo cenário, iniciamos com uma estrutura padrão
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
                             "Armazenagem": 0,
@@ -168,26 +166,42 @@ elif option == "Configuração":
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
     else:
+        # Usamos um threshold para decidir entre tabs ou selectbox para escolher o cenário
+        scenario_threshold = 5
         for filial in data.keys():
             st.subheader(f"Configuração de Custos - Filial: {filial}")
             if not data[filial]:
                 st.info("Nenhum cenário cadastrado para essa filial. Adicione na aba Gerenciamento.")
             else:
                 scenario_names = list(data[filial].keys())
-                scenario_tabs = st.tabs(scenario_names)
-                for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
-                    with scenario_tab:
-                        st.subheader(f"{scenario} - {filial}")
-                        # Itera sobre os campos existentes no cenário de forma dinâmica
-                        if data[filial][scenario]:
-                            for field, value in data[filial][scenario].items():
-                                unique_key = f"{filial}_{scenario}_{field}"
-                                updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
-                                if updated_value != value:
-                                    data[filial][scenario][field] = updated_value
-                                    save_data(data)
-                        else:
-                            st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
+                if len(scenario_names) <= scenario_threshold:
+                    scenario_tabs = st.tabs(scenario_names)
+                    for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
+                        with scenario_tab:
+                            st.subheader(f"{scenario} - {filial}")
+                            # Exibe os campos configurados para o cenário dinamicamente
+                            if data[filial][scenario]:
+                                for field, value in data[filial][scenario].items():
+                                    unique_key = f"{filial}_{scenario}_{field}"
+                                    updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
+                                    if updated_value != value:
+                                        data[filial][scenario][field] = updated_value
+                                        save_data(data)
+                            else:
+                                st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
+                else:
+                    # Se houver muitos cenários, usa selectbox para evitar problemas de visualização das abas
+                    selected_scenario = st.selectbox(f"Selecione o cenário para {filial}", scenario_names, key=f"selectbox_{filial}")
+                    st.subheader(f"{selected_scenario} - {filial}")
+                    if data[filial][selected_scenario]:
+                        for field, value in data[filial][selected_scenario].items():
+                            unique_key = f"{filial}_{selected_scenario}_{field}"
+                            updated_value = st.number_input(f"{field}", min_value=0, value=value, key=unique_key)
+                            if updated_value != value:
+                                data[filial][selected_scenario][field] = updated_value
+                                save_data(data)
+                    else:
+                        st.info("Nenhum campo definido para este cenário. Adicione na aba Gerenciamento -> Campos de Custo.")
         st.success("Configuração atualizada e salva automaticamente!")
 
 # --- Área do Simulador de Cenários ---
@@ -216,7 +230,7 @@ elif option == "Simulador de Cenários":
                 # Ignora cenário "teste" (case insensitive)
                 if scenario.lower() == "teste":
                     continue
-                # Considera apenas cenários com ao menos um campo definido (não todos zeros)
+                # Considera apenas cenários que tenham pelo menos um campo com valor > 0
                 if not any(v > 0 for v in fields.values()):
                     continue
 
