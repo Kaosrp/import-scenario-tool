@@ -113,6 +113,13 @@ elif option == "Simulador de Cenários":
             # Bypass: ignora o cenário "teste" (case insensitive)
             if scenario.lower() == "teste":
                 continue
+
+            # Novo: considera apenas cenários com ao menos um valor > 0 nos campos de configuração
+            campos = ["Frete rodoviário", "Armazenagem", "Taxa MAPA", 
+                      "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]
+            if all(fields.get(campo, 0) == 0 for campo in campos):
+                continue
+
             scenario_data = fields.copy()
             scenario_data['Valor CIF'] = valor_cif
             total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
