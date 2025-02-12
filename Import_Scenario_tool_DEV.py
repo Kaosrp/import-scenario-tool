@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import os
 import altair as alt
+from datetime import datetime
 
 # Injeção de CSS para habilitar scroll horizontal na lista de abas
 st.markdown(
@@ -15,8 +16,9 @@ st.markdown(
     </style>
     """, unsafe_allow_html=True)
 
-# Arquivo para salvar e carregar a base de dados
+# Arquivos para dados
 data_file = "cost_config.json"
+history_file = "simulation_history.json"
 
 def load_data():
     if os.path.exists(data_file):
@@ -28,6 +30,17 @@ def load_data():
 def save_data(data):
     with open(data_file, "w") as f:
         json.dump(data, f, indent=4)
+
+def load_history():
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            return json.load(f)
+    else:
+        return []
+
+def save_history(history):
+    with open(history_file, "w") as f:
+        json.dump(history, f, indent=4)
 
 # Função para calcular o custo total por cenário de forma dinâmica
 def calculate_total_cost(data_dict, scenario):
@@ -41,9 +54,9 @@ st.title("Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
-                              ["Gerenciamento", "Configuração", "Simulador de Cenários"])
+                              ["Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"])
 
-# Carrega os dados da base (JSON)
+# Carrega os dados da base de custos
 data = load_data()
 
 # --- Área de Gerenciamento ---
@@ -51,7 +64,7 @@ if option == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
-    # --- Gerenciamento de Filiais ---
+    # Gerenciamento de Filiais
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -67,7 +80,6 @@ if option == "Gerenciamento":
                     st.info("Recarregue a página para ver as alterações.")
             else:
                 st.warning("Digite um nome válido para a filial.")
-        
         st.markdown("### Filiais existentes:")
         if data:
             for filial in list(data.keys()):
@@ -83,7 +95,7 @@ if option == "Gerenciamento":
         else:
             st.info("Nenhuma filial cadastrada.")
     
-    # --- Gerenciamento de Cenários ---
+    # Gerenciamento de Cenários
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -105,7 +117,6 @@ if option == "Gerenciamento":
                             st.info("Recarregue a página para ver as alterações.")
             else:
                 st.info("Nenhum cenário cadastrado para essa filial.")
-            
             new_scenario = st.text_input("Novo Cenário", key="new_scenario_input")
             if st.button("Adicionar Cenário"):
                 new_scenario_stripped = new_scenario.strip()
@@ -128,7 +139,7 @@ if option == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
     
-    # --- Gerenciamento de Campos de Custo ---
+    # Gerenciamento de Campos de Custo
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -221,7 +232,6 @@ elif option == "Simulador de Cenários":
                     continue
                 if not any(v > 0 for v in fields.values()):
                     continue
-
                 scenario_data = fields.copy()
                 scenario_data['Valor CIF'] = valor_cif
                 total_cost, custo_icms = calculate_total_cost(scenario_data, scenario)
@@ -243,6 +253,41 @@ elif option == "Simulador de Cenários":
             ).properties(title="Comparativo de Custos por Cenário")
             st.altair_chart(chart, use_container_width=True)
             
-            st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
+            best_scenario = df.index[0]
+            best_cost = df.iloc[0]['Custo Total']
+            st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {best_cost:,.2f}**.")
+            
+            if st.button("Salvar Simulação no Histórico"):
+                history = load_history()
+                simulation_record = {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "filial": filial_selected,
+                    "valor_fob_usd": valor_fob_usd,
+                    "frete_internacional_usd": frete_internacional_usd,
+                    "taxas_frete_brl": taxas_frete_brl,
+                    "taxa_cambio": taxa_cambio,
+                    "valor_cif": valor_cif,
+                    "best_scenario": best_scenario,
+                    "best_cost": best_cost,
+                    "results": costs  # Registro opcional de todos os resultados
+                }
+                history.append(simulation_record)
+                save_history(history)
+                st.success("Simulação salva no histórico com sucesso!")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
+
+# --- Área do Histórico de Simulações ---
+elif option == "Histórico de Simulações":
+    st.header("Histórico de Simulações")
+    history = load_history()
+    if history:
+        df_history = pd.DataFrame(history)
+        st.dataframe(df_history)
+        if st.button("Limpar Histórico"):
+            if st.confirm("Tem certeza que deseja limpar o histórico?"):
+                save_history([])
+                st.success("Histórico limpo com sucesso!")
+                st.experimental_rerun()
+    else:
+        st.info("Nenhuma simulação registrada no histórico.")
