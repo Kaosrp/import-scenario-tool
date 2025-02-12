@@ -6,6 +6,16 @@ import altair as alt
 from datetime import datetime
 import io
 
+import subprocess
+import sys
+
+try:
+    import xlsxwriter
+except ModuleNotFoundError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "XlsxWriter"])
+    import xlsxwriter
+
+
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
 st.markdown(
     """
