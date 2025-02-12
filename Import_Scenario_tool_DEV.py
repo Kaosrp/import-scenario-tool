@@ -4,9 +4,9 @@ import json
 import os
 import altair as alt
 from datetime import datetime
-from streamlit_option_menu import option_menu  # Menu lateral com ícones
+from streamlit_option_menu import option_menu  # Menu com ícones
 
-# Injeção de CSS para scroll horizontal na lista de abas
+# Injeção de CSS para scroll horizontal em abas
 st.markdown(
     """
     <style>
@@ -18,7 +18,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Arquivos para os dados e para o histórico de simulações
+# Arquivos para armazenar dados
 data_file = "cost_config.json"
 history_file = "simulation_history.json"
 
@@ -43,7 +43,7 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
-# Função para calcular custo total e ICMS
+# Função para cálculo de custo total e ICMS
 def calculate_total_cost(data_dict, scenario):
     icms_rate = 0.18 if ("DI" in scenario or "DDC" in scenario) else 0.0
     custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
@@ -70,7 +70,6 @@ if option == "Dashboard":
         df_history = pd.DataFrame(history)
         df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
         st.subheader("Simulações Recentes")
-        
         last_simulations = df_history.sort_values("timestamp", ascending=False).head(5)
         st.dataframe(last_simulations[["timestamp", "filial", "processo_nome", "best_scenario", "best_cost"]])
         
@@ -89,8 +88,7 @@ elif option == "Gerenciamento":
     st.title("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
-    # Gerenciamento de Filiais
-    with management_tabs[0]:
+    with management_tabs[0]:  # Gerenciamento de Filiais
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial")
         if st.button("Adicionar Filial"):
@@ -156,3 +154,4 @@ elif option == "Histórico de Simulações":
         st.dataframe(df_history.sort_values("timestamp", ascending=False))
     else:
         st.info("Nenhuma simulação registrada no histórico.")
+
