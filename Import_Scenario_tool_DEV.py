@@ -43,7 +43,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("DEV - Ferramenta de Análise de Cenários de Importação")
+st.title("Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -216,8 +216,10 @@ elif option == "Simulador de Cenários":
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
-# Se a flag estiver acionada, dispara o rerun (fora do contexto de callbacks)
+# Chamada final para disparar o rerun (fora do fluxo de callbacks)
 if st.session_state.trigger_rerun:
     st.session_state.trigger_rerun = False
-    st.experimental_rerun()
-    
+    try:
+        st.experimental_rerun()
+    except Exception as e:
+        st.error("Erro ao atualizar a página. Por favor, recarregue manualmente.")
