@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import altair as alt
 
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
@@ -34,7 +35,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("DEV - Ferramenta de Análise de Cenários de Importação")
+st.title("Ferramenta de Análise de Cenários de Importação")
 option = st.sidebar.selectbox("Escolha uma opção", ["Configuração", "Simulador de Cenários"])
 
 # Carrega os dados da base (JSON)
@@ -98,10 +99,13 @@ elif option == "Simulador de Cenários":
     filial_selected = st.selectbox("Selecione a Filial", ["Cuiabá-MT", "Ribeirão Preto-SP", "Uberaba-MG"])
     
     st.subheader("Cálculo do Valor CIF")
-    valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
-    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
-    taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
-    taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
+    col1, col2 = st.columns(2)
+    with col1:
+        valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
+        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+    with col2:
+        taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
+        taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
     
     # Cálculo do valor CIF
     valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
@@ -114,7 +118,7 @@ elif option == "Simulador de Cenários":
             if scenario.lower() == "teste":
                 continue
 
-            # Novo: considera apenas cenários com ao menos um valor > 0 nos campos de configuração
+            # Considera apenas cenários com ao menos um valor > 0 nos campos de configuração
             campos = ["Frete rodoviário", "Armazenagem", "Taxa MAPA", 
                       "Taxas Porto Seco", "Desova EAD", "Taxa cross docking", "Taxa DDC"]
             if all(fields.get(campo, 0) == 0 for campo in campos):
@@ -139,6 +143,16 @@ elif option == "Simulador de Cenários":
         st.write("### Comparação de Cenários para a Filial Selecionada")
         df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
         st.dataframe(df)
+        
+        # Gráfico de barras para comparar o custo total por cenário
+        chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
+        chart = alt.Chart(chart_data).mark_bar().encode(
+            x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
+            y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
+            tooltip=['Cenário', 'Custo Total', 'ICMS (Calculado)']
+        ).properties(title="Comparativo de Custos por Cenário")
+        st.altair_chart(chart, use_container_width=True)
+        
         st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
     else:
         st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
