@@ -53,7 +53,7 @@ def calculate_total_cost(data_dict, scenario):
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
-st.title("Ferramenta de Análise de Cenários de Importação")
+st.title("DEV - Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral para selecionar a funcionalidade
 option = st.sidebar.selectbox("Escolha uma opção", 
