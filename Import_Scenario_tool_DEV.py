@@ -4,9 +4,9 @@ import json
 import os
 import altair as alt
 from datetime import datetime
-from streamlit_option_menu import option_menu  # Biblioteca para menu lateral com ícones
+from streamlit_option_menu import option_menu  # Menu lateral com ícones
 
-# Injeção de CSS para habilitar scroll horizontal e ajustes de layout
+# Injeção de CSS para ajuste de layout
 st.markdown(
     """
     <style>
@@ -49,7 +49,7 @@ def calculate_total_cost(data_dict, scenario):
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
-# --- Interface principal ---
+# Menu lateral com ícones
 with st.sidebar:
     option = option_menu(
         "Menu Principal",
@@ -61,7 +61,7 @@ with st.sidebar:
 
 data = load_data()
 
-# --- Dashboard Inicial ---
+# --- Dashboard ---
 if option == "Dashboard":
     st.title("Dashboard - Resumo de Simulações")
     history = load_history()
@@ -89,6 +89,7 @@ elif option == "Gerenciamento":
     st.title("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
+    # Gerenciamento de Filiais
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial")
