@@ -39,7 +39,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("DEV - Ferramenta de Análise de Cenários de Importação")
+st.title("dev Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -66,7 +66,10 @@ if option == "Gerenciamento":
                     data[new_filial_stripped] = {}
                     save_data(data)
                     st.success("Filial adicionada com sucesso!")
-                    st.experimental_rerun()
+                    try:
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error("Erro ao atualizar a página. Tente recarregar manualmente.")
             else:
                 st.warning("Digite um nome válido para a filial.")
         
@@ -89,7 +92,7 @@ if option == "Gerenciamento":
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
-            st.warning("Nenhuma filial cadastrada. Adicione uma filial na aba Filenciamento!")
+            st.warning("Nenhuma filial cadastrada. Adicione uma filial na aba Filiais!")
         else:
             filial_select = st.selectbox("Selecione a Filial", list(data.keys()), key="select_filial_for_scenario")
             scenarios_list = list(data[filial_select].keys())
@@ -211,3 +214,4 @@ elif option == "Simulador de Cenários":
             st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
+
