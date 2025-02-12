@@ -4,7 +4,6 @@ import json
 import os
 import altair as alt
 from datetime import datetime
-import io
 
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
 st.markdown(
@@ -227,7 +226,7 @@ elif option == "Simulador de Cenários":
         valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
         st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
         
-        # Novo campo para informar o nome do processo
+        # Campo para informar o nome do processo
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
         
         costs = {}
@@ -235,6 +234,7 @@ elif option == "Simulador de Cenários":
             for scenario, fields in data[filial_selected].items():
                 if scenario.lower() == "teste":
                     continue
+                # Considera apenas cenários com ao menos um campo com valor > 0
                 if not any(v > 0 for v in fields.values()):
                     continue
                 scenario_data = fields.copy()
@@ -291,7 +291,6 @@ elif option == "Histórico de Simulações":
         df_history = df_history.sort_values("timestamp", ascending=False)
         st.markdown("### Registros de Simulação")
         for i, record in df_history.iterrows():
-            # Cria um título mais detalhado para o expander
             expander_title = (
                 f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Filial: {record['filial']} | "
                 f"Processo: {record.get('processo_nome', 'N/A')} | "
@@ -309,7 +308,6 @@ elif option == "Histórico de Simulações":
                 st.write(f"- **Custo Total:** R$ {record['best_cost']:,.2f}")
                 st.markdown("**Resultados Completos:**")
                 st.code(json.dumps(record["results"], indent=4, ensure_ascii=False))
-             
         if st.button("Limpar Histórico"):
             if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
