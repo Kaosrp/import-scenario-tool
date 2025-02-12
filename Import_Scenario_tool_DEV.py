@@ -39,7 +39,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("dev Ferramenta de Análise de Cenários de Importação")
+st.title("dev-Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -214,4 +214,3 @@ elif option == "Simulador de Cenários":
             st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
-
