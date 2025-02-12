@@ -80,7 +80,6 @@ if st.sidebar.button("Histórico de Simulações"):
 # O módulo selecionado é aquele armazenado no session_state
 module_selected = st.session_state.module
 
-st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 # --------------------------------------------------------------
 
 # Carrega a base de dados
