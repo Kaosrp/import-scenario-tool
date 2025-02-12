@@ -5,7 +5,7 @@ import os
 import altair as alt
 from datetime import datetime
 
-# Injeção de CSS para habilitar scroll horizontal na lista de abas
+# Injeção de CSS para habilitar scroll horizontal na lista de abas (útil se houver muitas abas)
 st.markdown(
     """
     <style>
@@ -16,10 +16,11 @@ st.markdown(
     </style>
     """, unsafe_allow_html=True)
 
-# Arquivos para dados
+# Arquivos para os dados e para o histórico de simulações
 data_file = "cost_config.json"
 history_file = "simulation_history.json"
 
+# Funções para carregar/salvar a base de dados de custos
 def load_data():
     if os.path.exists(data_file):
         with open(data_file, "r") as f:
@@ -31,6 +32,7 @@ def save_data(data):
     with open(data_file, "w") as f:
         json.dump(data, f, indent=4)
 
+# Funções para carregar/salvar o histórico de simulações
 def load_history():
     if os.path.exists(history_file):
         with open(history_file, "r") as f:
@@ -42,21 +44,22 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
-# Função para calcular o custo total por cenário de forma dinâmica
+# Função de cálculo do custo total de forma dinâmica
 def calculate_total_cost(data_dict, scenario):
-    # Aplica ICMS para cenários que contenham "DI" ou "DDC" no nome
-    icms_rate = 0.18 if "DI" in scenario or "DDC" in scenario else 0.0
+    # Aplica ICMS se o nome do cenário contiver "DI" ou "DDC"
+    icms_rate = 0.18 if ("DI" in scenario or "DDC" in scenario) else 0.0
     custo_icms = data_dict.get('Valor CIF', 0) * icms_rate
+    # Soma o Valor CIF com todos os demais itens (exceto o próprio "Valor CIF") e adiciona o ICMS
     total_cost = data_dict.get('Valor CIF', 0) + sum(v for k, v in data_dict.items() if k != 'Valor CIF') + custo_icms
     return total_cost, custo_icms
 
 st.title("Ferramenta de Análise de Cenários de Importação")
 
-# Menu lateral com as opções do sistema
+# Menu lateral para selecionar a funcionalidade
 option = st.sidebar.selectbox("Escolha uma opção", 
                               ["Gerenciamento", "Configuração", "Simulador de Cenários", "Histórico de Simulações"])
 
-# Carrega os dados da base de custos
+# Carrega a base de dados
 data = load_data()
 
 # --- Área de Gerenciamento ---
@@ -124,6 +127,7 @@ if option == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
+                        # Estrutura padrão ao adicionar um novo cenário
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
                             "Armazenagem": 0,
@@ -221,15 +225,14 @@ elif option == "Simulador de Cenários":
         with col2:
             taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
             taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
-        
         valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
         st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
-        
         costs = {}
         if filial_selected in data:
             for scenario, fields in data[filial_selected].items():
                 if scenario.lower() == "teste":
                     continue
+                # Considere apenas cenários com ao menos um campo com valor > 0
                 if not any(v > 0 for v in fields.values()):
                     continue
                 scenario_data = fields.copy()
@@ -240,7 +243,6 @@ elif option == "Simulador de Cenários":
                     "ICMS (Calculado)": custo_icms,
                 }
                 costs[scenario].update(fields)
-        
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
@@ -250,13 +252,11 @@ elif option == "Simulador de Cenários":
                 x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
                 y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
                 tooltip=['Cenário', 'Custo Total', 'ICMS (Calculado)']
-            ).properties(title="Comparativo de Custos por Cenário")
+            ).properties(title="Comparativo de Custos por Cenário", width=700, height=400)
             st.altair_chart(chart, use_container_width=True)
-            
             best_scenario = df.index[0]
             best_cost = df.iloc[0]['Custo Total']
             st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {best_cost:,.2f}**.")
-            
             if st.button("Salvar Simulação no Histórico"):
                 history = load_history()
                 simulation_record = {
@@ -269,7 +269,7 @@ elif option == "Simulador de Cenários":
                     "valor_cif": valor_cif,
                     "best_scenario": best_scenario,
                     "best_cost": best_cost,
-                    "results": costs  # Registro opcional de todos os resultados
+                    "results": costs
                 }
                 history.append(simulation_record)
                 save_history(history)
@@ -283,11 +283,39 @@ elif option == "Histórico de Simulações":
     history = load_history()
     if history:
         df_history = pd.DataFrame(history)
-        st.dataframe(df_history)
+        df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
+        df_history = df_history.sort_values("timestamp", ascending=False)
+        # Gráfico interativo com a evolução do custo do melhor cenário ao longo do tempo
+        chart = alt.Chart(df_history).mark_line(point=True).encode(
+            x=alt.X("timestamp:T", title="Data e Hora"),
+            y=alt.Y("best_cost:Q", title="Custo do Melhor Cenário (R$)"),
+            color=alt.Color("filial:N", title="Filial"),
+            tooltip=["timestamp:T", "filial:N", "best_scenario:N", "best_cost:Q"]
+        ).properties(width=700, height=300, title="Tendência do Custo do Melhor Cenário ao Longo do Tempo")
+        st.altair_chart(chart, use_container_width=True)
+        st.markdown("### Registros de Simulação")
+        for i, record in df_history.iterrows():
+            expander_title = (
+                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Filial: {record['filial']} | "
+                f"Melhor: {record['best_scenario']} | Custo: R$ {record['best_cost']:,.2f}"
+            )
+            with st.expander(expander_title):
+                st.markdown("**Parâmetros de Entrada:**")
+                st.write(f"Valor FOB (USD): {record['valor_fob_usd']}")
+                st.write(f"Frete Internacional (USD): {record['frete_internacional_usd']}")
+                st.write(f"Taxas do Frete (BRL): {record['taxas_frete_brl']}")
+                st.write(f"Taxa de Câmbio: {record['taxa_cambio']}")
+                st.write(f"Valor CIF Calculado: {record['valor_cif']}")
+                st.markdown("**Resultados da Simulação:**")
+                st.write(f"Melhor Cenário: {record['best_scenario']}")
+                st.write(f"Custo Total: R$ {record['best_cost']:,.2f}")
+                st.markdown("**Resultados Completos:**")
+                st.json(record["results"])
         if st.button("Limpar Histórico"):
-            if st.confirm("Tem certeza que deseja limpar o histórico?"):
+            if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
                 st.success("Histórico limpo com sucesso!")
                 st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
+
