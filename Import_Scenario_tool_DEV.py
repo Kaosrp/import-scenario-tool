@@ -4,10 +4,6 @@ import json
 import os
 import altair as alt
 
-# Inicializa a flag de atualização no session_state
-if "trigger_rerun" not in st.session_state:
-    st.session_state.trigger_rerun = False
-
 # Arquivo para salvar e carregar a base de dados
 data_file = "cost_config.json"
 
@@ -43,7 +39,7 @@ def calculate_total_cost(data, scenario):
     return total_cost, custo_icms
 
 # Título do app
-st.title("DEV-Ferramenta de Análise de Cenários de Importação")
+st.title("dev-Ferramenta de Análise de Cenários de Importação")
 
 # Menu lateral com as opções do sistema
 option = st.sidebar.selectbox("Escolha uma opção", 
@@ -70,7 +66,7 @@ if option == "Gerenciamento":
                     data[new_filial_stripped] = {}
                     save_data(data)
                     st.success("Filial adicionada com sucesso!")
-                    st.session_state.trigger_rerun = True
+                    st.info("Por favor, recarregue a página para ver as alterações.")
             else:
                 st.warning("Digite um nome válido para a filial.")
         
@@ -85,7 +81,7 @@ if option == "Gerenciamento":
                         del data[filial]
                         save_data(data)
                         st.success(f"Filial '{filial}' excluída.")
-                        st.session_state.trigger_rerun = True
+                        st.info("Por favor, recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
 
@@ -108,7 +104,7 @@ if option == "Gerenciamento":
                             del data[filial_select][scenario]
                             save_data(data)
                             st.success(f"Cenário '{scenario}' excluído da filial '{filial_select}'.")
-                            st.session_state.trigger_rerun = True
+                            st.info("Por favor, recarregue a página para ver as alterações.")
             else:
                 st.info("Nenhum cenário cadastrado para essa filial.")
             
@@ -123,7 +119,7 @@ if option == "Gerenciamento":
                         data[filial_select][new_scenario_stripped] = { field: 0 for field in default_fields }
                         save_data(data)
                         st.success("Cenário adicionado com sucesso!")
-                        st.session_state.trigger_rerun = True
+                        st.info("Por favor, recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
 
@@ -215,11 +211,3 @@ elif option == "Simulador de Cenários":
             st.write(f"O melhor cenário para {filial_selected} é **{df.index[0]}** com custo total de **R$ {df.iloc[0]['Custo Total']:,.2f}**.")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
-
-# Chamada final para disparar o rerun (fora do fluxo de callbacks)
-if st.session_state.trigger_rerun:
-    st.session_state.trigger_rerun = False
-    try:
-        st.experimental_rerun()
-    except Exception as e:
-        st.error("Erro ao atualizar a página. Por favor, recarregue manualmente.")
