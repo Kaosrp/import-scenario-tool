@@ -6,6 +6,16 @@ import altair as alt
 from datetime import datetime
 import io
 
+# Função para formatar números no padrão "1.234,56"
+def format_brl(x):
+    try:
+        # Formata como "1,234.56" e troca vírgulas por "TEMP" e pontos por vírgula, depois "TEMP" por ponto
+        s = "{:,.2f}".format(float(x))
+        s = s.replace(",", "TEMP").replace(".", ",").replace("TEMP", ".")
+        return s
+    except Exception as e:
+        return x
+
 # Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
 st.markdown(
     """
@@ -51,7 +61,7 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
     config: dicionário de campos do cenário.
     base_values: dicionário com as bases de cálculo, por exemplo:
                  {"Valor CIF": valor_cif, "Valor FOB": valor_fob, "Frete Internacional": frete_int}.
-    taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases que estiverem em USD.
+    taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases em USD.
     """
     extra = 0
     for field, conf in config.items():
@@ -64,18 +74,19 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
                 base = conf.get("base", "")
                 rate = conf.get("rate", 0)
                 base_val = base_values.get(base, 0)
-                # Se a base for "Valor FOB" ou "Frete Internacional" (em USD), converte para BRL
+                # Se a base for "Valor FOB" ou "Frete Internacional", converte para BRL
                 if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
-    # Valor CIF já está em BRL, somamos com o extra
     return base_values.get("Valor CIF", 0) + extra
 
 # Função para gerar CSV com os resultados da simulação
 def generate_csv(sim_record):
     results = sim_record["results"]
-    df = pd.DataFrame(results).T  # Transpõe para melhor visualização
-    csv_data = df.to_csv(index=True)
+    df = pd.DataFrame(results).T
+    # Aplica formatação em cada valor numérico
+    df_formatted = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+    csv_data = df_formatted.to_csv(index=True, sep=";")
     return csv_data.encode('utf-8')
 
 st.title("Ferramenta de Análise de Cenários de Importação")
@@ -313,12 +324,12 @@ elif module_selected == "Simulador de Cenários":
             taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
             taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
         valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
-        st.write(f"### Valor CIF Calculado: R$ {valor_cif:,.2f}")
+        st.write(f"### Valor CIF Calculado: R$ {format_brl(valor_cif)}")
         
         # Campo para informar o nome do processo
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
         
-        # Cria um dicionário de bases para o cálculo percentual
+        # Dicionário de bases para o cálculo percentual
         base_values = {
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
@@ -366,7 +377,9 @@ elif module_selected == "Simulador de Cenários":
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
-            st.dataframe(df)
+            # Formata a exibição dos números no DataFrame
+            df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+            st.dataframe(df_display)
             chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
             chart = alt.Chart(chart_data).mark_bar().encode(
                 x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
@@ -376,7 +389,7 @@ elif module_selected == "Simulador de Cenários":
             st.altair_chart(chart, use_container_width=True)
             best_scenario = df.index[0]
             best_cost = df.iloc[0]['Custo Total']
-            st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {best_cost:,.2f}**.")
+            st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
             if st.button("Salvar Simulação no Histórico"):
                 history = load_history()
                 simulation_record = {
@@ -411,21 +424,22 @@ elif module_selected == "Histórico de Simulações":
             expander_title = (
                 f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Filial: {record['filial']} | "
                 f"Processo: {record.get('processo_nome', 'N/A')} | "
-                f"Melhor: {record['best_scenario']} | Custo: R$ {record['best_cost']:,.2f}"
+                f"Melhor: {record['best_scenario']} | Custo: R$ {format_brl(record['best_cost'])}"
             )
             with st.expander(expander_title):
                 st.markdown("**Parâmetros de Entrada:**")
-                st.write(f"- **Valor FOB (USD):** {record['valor_fob_usd']}")
-                st.write(f"- **Frete Internacional (USD):** {record['frete_internacional_usd']}")
-                st.write(f"- **Taxas do Frete (BRL):** {record['taxas_frete_brl']}")
-                st.write(f"- **Taxa de Câmbio:** {record['taxa_cambio']}")
-                st.write(f"- **Valor CIF Calculado:** {record['valor_cif']}")
+                st.write(f"- **Valor FOB (USD):** {format_brl(record['valor_fob_usd'])}")
+                st.write(f"- **Frete Internacional (USD):** {format_brl(record['frete_internacional_usd'])}")
+                st.write(f"- **Taxas do Frete (BRL):** {format_brl(record['taxas_frete_brl'])}")
+                st.write(f"- **Taxa de Câmbio:** {format_brl(record['taxa_cambio'])}")
+                st.write(f"- **Valor CIF Calculado:** {format_brl(record['valor_cif'])}")
                 st.markdown("**Resultados da Simulação:**")
                 st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
-                st.write(f"- **Custo Total:** R$ {record['best_cost']:,.2f}")
+                st.write(f"- **Custo Total:** R$ {format_brl(record['best_cost'])}")
                 st.markdown("**Resultados Completos:**")
                 results_df = pd.DataFrame(record["results"]).T
-                st.dataframe(results_df)
+                results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                st.dataframe(results_df_display)
                 csv_bytes = generate_csv(record)
                 file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.csv"
                 st.download_button("Exportar Resultados para CSV", data=csv_bytes, file_name=file_name, mime="text/csv")
