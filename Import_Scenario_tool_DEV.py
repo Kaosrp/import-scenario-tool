@@ -66,7 +66,6 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
                 base = conf.get("base", "")
                 rate = conf.get("rate", 0)
                 base_val = base_values.get(base, 0)
-                # Se a base for "Valor FOB" ou "Frete Internacional", converte para BRL
                 if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
@@ -76,7 +75,6 @@ def generate_csv(sim_record):
     results = sim_record["results"]
     df = pd.DataFrame(results).T
     df_formatted = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-    # Usamos ; como separador e mantemos o encoding em UTF-8
     csv_data = df_formatted.to_csv(index=True, sep=";")
     return csv_data.encode('utf-8')
 
@@ -105,7 +103,7 @@ if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
 
-    # 1) Gerenciamento de Filiais
+    # (1) Gerenciamento de Filiais
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -137,7 +135,7 @@ if module_selected == "Gerenciamento":
         else:
             st.info("Nenhuma filial cadastrada.")
 
-    # 2) Gerenciamento de Cenários
+    # (2) Gerenciamento de Cenários
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -182,7 +180,7 @@ if module_selected == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
 
-    # 3) Gerenciamento de Campos de Custo – usando st.columns em uma linha por campo
+    # (3) Gerenciamento de Campos de Custo - com st.columns em uma única linha
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -195,13 +193,11 @@ if module_selected == "Gerenciamento":
                 scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="gerenciamento_cenario")
                 scenario_fields = data[filial_for_field][scenario_for_field]
                 st.markdown("### Campos Existentes:")
-                # Cabeçalho da "tabela"
                 st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Remover**")
 
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
-                        # Descobre o tipo atual (fixed/percentage) e valores
                         if isinstance(current, dict):
                             current_type = current.get("type", "fixed")
                             current_fixed = float(current.get("value", 0)) if current_type=="fixed" else 0.0
@@ -213,16 +209,19 @@ if module_selected == "Gerenciamento":
                             current_rate = 0.0
                             current_base = "Valor CIF"
 
-                        # Uma linha (row) para o campo
-                        col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 1])
+                        # Ajuste de larguras para o layout
+                        col1, col2, col3, col4, col5 = st.columns([3, 2.5, 2.5, 2.5, 1.5])
 
                         with col1:
-                            st.write(f"**{field}**")  # Nome do campo
+                            st.write(f"**{field}**")
 
                         with col2:
-                            novo_tipo = st.radio("Tipo", ["fixed", "percentage"],
-                                                 index=0 if current_type=="fixed" else 1,
-                                                 key=f"tipo_{filial_for_field}_{scenario_for_field}_{field}")
+                            # Substitui o radio por um selectbox
+                            novo_tipo = st.selectbox("Tipo",
+                                                     ["fixed", "percentage"],
+                                                     index=0 if current_type=="fixed" else 1,
+                                                     key=f"tipo_{filial_for_field}_{scenario_for_field}_{field}")
+
                         if novo_tipo == "fixed":
                             with col3:
                                 novo_valor = st.number_input("Valor Fixo",
@@ -230,8 +229,7 @@ if module_selected == "Gerenciamento":
                                                              value=current_fixed,
                                                              key=f"fixo_{filial_for_field}_{scenario_for_field}_{field}")
                             scenario_fields[field] = {"type": "fixed", "value": novo_valor}
-                            # col4 vazio, pois base não é usada em fixed
-                            col4.write("")
+                            col4.write("")  # Base não se aplica para fixed
                         else:
                             with col3:
                                 nova_taxa = st.number_input("Taxa (%)",
@@ -241,7 +239,7 @@ if module_selected == "Gerenciamento":
                                                             key=f"taxa_{filial_for_field}_{scenario_for_field}_{field}")
                             with col4:
                                 nova_base = st.selectbox("Base",
-                                                         options=["Valor CIF", "Valor FOB", "Frete Internacional"],
+                                                         ["Valor CIF", "Valor FOB", "Frete Internacional"],
                                                          index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(current_base),
                                                          key=f"base_{filial_for_field}_{scenario_for_field}_{field}")
                             scenario_fields[field] = {
@@ -249,6 +247,7 @@ if module_selected == "Gerenciamento":
                                 "rate": nova_taxa/100.0,
                                 "base": nova_base
                             }
+
                         with col5:
                             if st.button("Remover", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
                                 del scenario_fields[field]
@@ -263,12 +262,12 @@ if module_selected == "Gerenciamento":
                 new_field = st.text_input("Nome do Novo Campo", key="novo_campo")
                 if new_field:
                     st.markdown("Defina as opções para o novo campo:")
-                    field_type = st.radio("Tipo do Campo", options=["fixed", "percentage"], key=f"tipo_novo_{new_field}")
+                    field_type = st.selectbox("Tipo do Campo", ["fixed", "percentage"], key=f"tipo_novo_{new_field}")
                     if field_type == "fixed":
                         field_value = st.number_input("Valor Fixo", min_value=0.0, value=0.0, key=f"valor_novo_{new_field}")
                     else:
                         field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
-                        base_option = st.selectbox("Base", options=["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
+                        base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
                     if st.button("Adicionar Campo", key=f"adicionar_{new_field}"):
                         new_field_stripped = new_field.strip()
                         if new_field_stripped in scenario_fields:
@@ -388,7 +387,6 @@ elif module_selected == "Simulador de Cenários":
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
-            # Formata a exibição no DataFrame
             df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
             st.dataframe(df_display)
             chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
