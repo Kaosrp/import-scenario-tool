@@ -253,7 +253,7 @@ if module_selected == "Gerenciamento":
                                 del scenario_fields[field]
                                 save_data(data)
                                 st.success(f"Campo '{field}' removido com sucesso!")
-                                st.experimental_rerun()
+                               
                 else:
                     st.info("Nenhum campo definido para este cenário.")
 
