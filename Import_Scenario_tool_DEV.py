@@ -100,7 +100,7 @@ if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
-    # Gerenciamento de Filiais
+    # Gerenciamento de Filiais (permanece inalterado)
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -131,7 +131,7 @@ if module_selected == "Gerenciamento":
         else:
             st.info("Nenhuma filial cadastrada.")
     
-    # Gerenciamento de Cenários
+    # Gerenciamento de Cenários (permanece inalterado)
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -160,6 +160,7 @@ if module_selected == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
+                        # Configuração padrão para um novo cenário (campos com valor zero)
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
                             "ICMS": 0,
@@ -176,7 +177,7 @@ if module_selected == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
     
-    # Gerenciamento de Campos de Custo
+    # Gerenciamento de Campos de Custo – agora com definição do tipo (fixed ou percentage)
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -203,23 +204,30 @@ if module_selected == "Gerenciamento":
                 else:
                     st.info("Nenhum campo definido para este cenário.")
                 new_field = st.text_input("Novo Campo", key="new_field_input")
-                if st.button("Adicionar Campo"):
-                    new_field_stripped = new_field.strip()
-                    if new_field_stripped:
+                if new_field.strip():
+                    st.markdown("Defina as opções para o novo campo:")
+                    field_type = st.radio("Tipo do Campo", options=["fixed", "percentage"], key=f"tipo_novo_{new_field.strip()}")
+                    if field_type == "fixed":
+                        field_value = st.number_input("Valor Fixo", min_value=0.0, value=0.0, key=f"valor_novo_{new_field.strip()}")
+                    else:
+                        field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field.strip()}")
+                        base_option = st.selectbox("Base", options=["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field.strip()}")
+                    if st.button("Adicionar Campo"):
+                        new_field_stripped = new_field.strip()
                         if new_field_stripped in scenario_fields:
                             st.warning("Campo já existe nesse cenário!")
                         else:
-                            data[filial_for_field][scenario_for_field][new_field_stripped] = 0
+                            if field_type == "fixed":
+                                scenario_fields[new_field_stripped] = {"type": "fixed", "value": field_value}
+                            else:
+                                scenario_fields[new_field_stripped] = {"type": "percentage", "rate": field_rate/100.0, "base": base_option}
                             save_data(data)
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
-                    else:
-                        st.warning("Digite um nome válido para o campo.")
 
-# ----- Área de Configuração com Novos Inputs para Tipo de Campo (Fixed ou Percentage) -----
+# ----- Área de Configuração (Simplificada: apenas alteração do valor dos campos fixed) -----
 elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
-    BASE_OPTIONS = ["Valor CIF", "Valor FOB", "Frete Internacional"]
     if not data:
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
     else:
@@ -233,40 +241,22 @@ elif module_selected == "Configuração":
                 for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
                     with scenario_tab:
                         st.subheader(f"{scenario} - {filial}")
-                        for field, value in data[filial][scenario].items():
-                            if isinstance(value, dict):
-                                current_type = value.get("type", "fixed")
-                                current_fixed = value.get("value", 0) if current_type == "fixed" else 0
-                                current_rate = value.get("rate", 0) if current_type == "percentage" else 0
-                                current_base = value.get("base", BASE_OPTIONS[0]) if current_type == "percentage" else BASE_OPTIONS[0]
+                        for field, conf in data[filial][scenario].items():
+                            if isinstance(conf, dict):
+                                if conf.get("type") == "fixed":
+                                    unique_key = f"{filial}_{scenario}_{field}"
+                                    novo_valor = st.number_input(f"{field} (Fixo)", min_value=0.0, value=float(conf.get("value",0)), key=unique_key)
+                                    if novo_valor != conf.get("value",0):
+                                        data[filial][scenario][field]["value"] = novo_valor
+                                        save_data(data)
+                                else:
+                                    st.write(f"{field} (Percentual: {conf.get('rate',0)*100:.1f}% sobre {conf.get('base','')})")
                             else:
-                                current_type = "fixed"
-                                current_fixed = value
-                                current_rate = 0
-                                current_base = BASE_OPTIONS[0]
-                            colA, colB = st.columns([2, 2])
-                            with colA:
-                                tipo = st.radio(f"Tipo para {field}", options=["fixed", "percentage"],
-                                                index=0 if current_type=="fixed" else 1,
-                                                key=f"tipo_{filial}_{scenario}_{field}")
-                            if tipo == "fixed":
-                                novo_valor = st.number_input(f"Valor Fixo para {field}",
-                                                             min_value=0.0,
-                                                             value=float(current_fixed),
-                                                             key=f"fixo_{filial}_{scenario}_{field}")
-                                data[filial][scenario][field] = {"type": "fixed", "value": novo_valor}
-                            else:
-                                nova_taxa = st.number_input(f"Taxa (%) para {field}",
-                                                            min_value=0.0,
-                                                            value=float(current_rate)*100.0,
-                                                            step=0.1,
-                                                            key=f"taxa_{filial}_{scenario}_{field}")
-                                nova_base = st.selectbox(f"Base para {field}",
-                                                         options=BASE_OPTIONS,
-                                                         index=BASE_OPTIONS.index(current_base) if current_base in BASE_OPTIONS else 0,
-                                                         key=f"base_{filial}_{scenario}_{field}")
-                                data[filial][scenario][field] = {"type": "percentage", "rate": nova_taxa/100.0, "base": nova_base}
-        save_data(data)
+                                unique_key = f"{filial}_{scenario}_{field}"
+                                novo_valor = st.number_input(f"{field}", min_value=0.0, value=float(conf), key=unique_key)
+                                if novo_valor != conf:
+                                    data[filial][scenario][field] = novo_valor
+                                    save_data(data)
         st.success("Configuração atualizada e salva automaticamente!")
 
 # ----- Área do Simulador de Cenários usando a nova estrutura para cálculo -----
@@ -399,4 +389,3 @@ elif module_selected == "Histórico de Simulações":
                 st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
-
