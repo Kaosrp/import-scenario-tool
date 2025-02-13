@@ -46,10 +46,11 @@ def save_history(history):
         json.dump(history, f, indent=4)
 
 # Função de cálculo do custo total usando a nova estrutura para campos
-def calculate_total_cost_extended(config, base_values):
+def calculate_total_cost_extended(config, base_values, taxa_cambio):
     """
     config: dicionário de campos do cenário.
     base_values: dicionário com as bases de cálculo, ex.: {"Valor CIF": valor_cif, "Valor FOB": valor_fob_usd, ...}
+    taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases que estiverem em USD.
     """
     extra = 0
     for field, conf in config.items():
@@ -62,7 +63,12 @@ def calculate_total_cost_extended(config, base_values):
             elif conf.get("type") == "percentage":
                 base = conf.get("base")
                 rate = conf.get("rate", 0)
-                extra += base_values.get(base, 0) * rate
+                base_val = base_values.get(base, 0)
+                # Se a base estiver em USD, converte para BRL multiplicando pela taxa de câmbio
+                if base in ["Valor FOB", "Frete Internacional"]:
+                    base_val = base_val * taxa_cambio
+                extra += base_val * rate
+    # Somamos o "Valor CIF" (que já está em BRL) com o extra
     return base_values.get("Valor CIF", 0) + extra
 
 # Função para gerar CSV com os resultados da simulação
@@ -95,12 +101,12 @@ st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 # Carrega a base de dados
 data = load_data()
 
-# ----------------------- MÓDULO: GERENCIAMENTO -------------------------
+# ---------------- MÓDULO: GERENCIAMENTO ----------------
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
     
-    # Gerenciamento de Filiais (permanece igual)
+    # Gerenciamento de Filiais
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -131,7 +137,7 @@ if module_selected == "Gerenciamento":
         else:
             st.info("Nenhuma filial cadastrada.")
     
-    # Gerenciamento de Cenários (permanece igual)
+    # Gerenciamento de Cenários
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -160,7 +166,6 @@ if module_selected == "Gerenciamento":
                     if new_scenario_stripped in data[filial_select]:
                         st.warning("Cenário já existe para essa filial!")
                     else:
-                        # Cria um cenário padrão com alguns campos já definidos (valores zero)
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
                             "ICMS": 0,
@@ -177,7 +182,7 @@ if module_selected == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
     
-    # Gerenciamento de Campos de Custo – Edição, remoção e criação com definição de parâmetros
+    # Gerenciamento de Campos de Custo – Definição completa do campo (tipo, taxa, base)
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -193,13 +198,12 @@ if module_selected == "Gerenciamento":
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         st.write(f"**Campo:** {field}")
-                        # Pega o valor atual do campo
                         current = scenario_fields[field]
                         if isinstance(current, dict):
                             current_type = current.get("type", "fixed")
-                            current_fixed = float(current.get("value", 0)) if current_type=="fixed" else 0.0
-                            current_rate = float(current.get("rate", 0)) if current_type=="percentage" else 0.0
-                            current_base = current.get("base", "Valor CIF") if current_type=="percentage" else "Valor CIF"
+                            current_fixed = float(current.get("value", 0)) if current_type == "fixed" else 0.0
+                            current_rate = float(current.get("rate", 0)) if current_type == "percentage" else 0.0
+                            current_base = current.get("base", "Valor CIF") if current_type == "percentage" else "Valor CIF"
                         else:
                             current_type = "fixed"
                             current_fixed = float(current)
@@ -214,15 +218,14 @@ if module_selected == "Gerenciamento":
                             with colB:
                                 novo_valor = st.number_input(f"Valor Fixo para {field}",
                                                              min_value=0.0,
-                                                             value=current_fixed,
+                                                             value=float(current_fixed),
                                                              key=f"fixo_{filial_for_field}_{scenario_for_field}_{field}")
-                            # Atualiza o campo
                             scenario_fields[field] = {"type": "fixed", "value": novo_valor}
                         else:
                             with colB:
                                 nova_taxa = st.number_input(f"Taxa (%) para {field}",
                                                             min_value=0.0,
-                                                            value=current_rate*100,
+                                                            value=float(current_rate)*100,
                                                             step=0.1,
                                                             key=f"taxa_{filial_for_field}_{scenario_for_field}_{field}")
                             with colC:
@@ -261,7 +264,7 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-# ----- Área de Configuração (somente alteração de valores para campos fixed) -----
+# ----- Área de Configuração (Somente alteração dos valores dos campos do tipo fixed) -----
 elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
     if not data:
@@ -315,7 +318,7 @@ elif module_selected == "Simulador de Cenários":
         # Campo para informar o nome do processo
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
         
-        # Dicionário de bases para o cálculo percentual
+        # Cria um dicionário de bases para o cálculo percentual
         base_values = {
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
@@ -338,7 +341,7 @@ elif module_selected == "Simulador de Cenários":
                         tem_valor = True
                 if not tem_valor:
                     continue
-                total_cost = calculate_total_cost_extended(config, base_values)
+                total_cost = calculate_total_cost_extended(config, base_values, taxa_cambio)
                 costs[scenario] = {"Custo Total": total_cost}
                 for field, conf in config.items():
                     if isinstance(conf, dict):
