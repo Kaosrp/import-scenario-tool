@@ -57,9 +57,9 @@ def save_history(history):
 def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction):
     """
     config: dicionário de campos do cenário (ex.: { "Frete rodoviário": {...}, ... }).
-    base_values: dicionário com as bases de cálculo, por exemplo:
+    base_values: dicionário com as bases de cálculo, ex.:
                  {"Valor CIF": valor_cif_final, "Valor FOB": valor_fob, "Frete Internacional": frete_internacional_rateado}.
-    taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases que estiverem em USD.
+    taxa_cambio: taxa de câmbio (USD -> BRL).
     occupancy_fraction: fração de ocupação do contêiner (ex.: 0.5 para 50%).
 
     Se um campo tiver "rate_by_occupancy": true, multiplicamos seu custo final por occupancy_fraction.
@@ -67,7 +67,7 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fr
     extra = 0
     for field, conf in config.items():
         if not isinstance(conf, dict):
-            # Compatibilidade: se for número simples
+            # Se for um número simples (compatibilidade antiga)
             cost_value = conf
         else:
             field_type = conf.get("type", "fixed")
@@ -90,9 +90,8 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fr
         
         extra += cost_value
     
-    # base_values["Valor CIF"] já é o valor CIF final (com seguro),
-    # mas sem as Taxas do Frete (BRL), que agora não compõem o CIF.
-    # Somamos extra (campos do cenário).
+    # base_values["Valor CIF"] já é o valor CIF final (com seguro).
+    # Aqui somamos esse extra dos campos do cenário ao Valor CIF.
     return base_values.get("Valor CIF", 0) + extra
 
 def generate_csv(sim_record):
@@ -204,7 +203,7 @@ if module_selected == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
 
-    # (3) Gerenciamento de Campos de Custo - com st.columns em uma única linha
+    # (3) Gerenciamento de Campos de Custo
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -222,7 +221,6 @@ if module_selected == "Gerenciamento":
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
-                        # Descobre config atual
                         if isinstance(current, dict):
                             current_type = current.get("type", "fixed")
                             current_fixed = float(current.get("value", 0)) if current_type == "fixed" else 0.0
@@ -230,7 +228,6 @@ if module_selected == "Gerenciamento":
                             current_base = current.get("base", "Valor CIF") if current_type == "percentage" else "Valor CIF"
                             current_rate_occ = bool(current.get("rate_by_occupancy", False))
                         else:
-                            # compatibilidade antiga
                             current_type = "fixed"
                             current_fixed = float(current)
                             current_rate = 0.0
@@ -274,13 +271,12 @@ if module_selected == "Gerenciamento":
                                 "rate": nova_taxa / 100.0,
                                 "base": nova_base
                             }
-                        
+
                         with col5:
                             novo_rate_occ = st.checkbox("Ratear?", value=current_rate_occ,
                                                         key=f"rate_occ_{filial_for_field}_{scenario_for_field}_{field}")
                             novo_config["rate_by_occupancy"] = novo_rate_occ
 
-                        # Verifica se algo mudou; se sim, salva
                         if novo_config != current:
                             scenario_fields[field] = novo_config
                             save_data(data)
@@ -357,7 +353,6 @@ elif module_selected == "Configuração":
                                     if novo_valor != conf.get("value", 0):
                                         data[filial][scenario][field]["value"] = novo_valor
                                         save_data(data)
-                                    # Checkbox "Ratear pela ocupação"
                                     rate_occ = bool(conf.get("rate_by_occupancy", False))
                                     new_rate_occ = st.checkbox(f"Ratear '{field}' pela ocupação?",
                                                                value=rate_occ,
@@ -367,7 +362,6 @@ elif module_selected == "Configuração":
                                         save_data(data)
                                 elif field_type == "percentage":
                                     st.write(f"{field} (Percentual: {conf.get('rate',0)*100:.1f}% sobre {conf.get('base','')})")
-                                    # Checkbox "Ratear pela ocupação"
                                     rate_occ = bool(conf.get("rate_by_occupancy", False))
                                     new_rate_occ = st.checkbox(f"Ratear '{field}' pela ocupação?",
                                                                value=rate_occ,
@@ -378,7 +372,7 @@ elif module_selected == "Configuração":
                                 else:
                                     st.write(f"{field} (Tipo desconhecido)")
                             else:
-                                # Se for apenas um número
+                                # Valor simples
                                 unique_key = f"{filial}_{scenario}_{field}"
                                 novo_valor = st.number_input(f"{field}",
                                                              min_value=0.0,
@@ -420,7 +414,7 @@ elif module_selected == "Simulador de Cenários":
             with col2:
                 st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
 
-        # Percentual de ocupação do contêiner (0..100)
+        # Percentual de ocupação do contêiner
         percentual_ocupacao_conteiner = st.number_input(
             "Percentual de Ocupação do Contêiner (%)",
             min_value=0.0, max_value=100.0, value=100.0
@@ -430,7 +424,10 @@ elif module_selected == "Simulador de Cenários":
         # Ratear o frete internacional
         frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
 
+        # "Taxas do Frete (BRL)" também devem ser rateadas
         taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
+        taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
+
         taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
 
         # 1) CIF base (sem seguro) - SEM incluir taxas_frete_brl no CIF
@@ -441,14 +438,14 @@ elif module_selected == "Simulador de Cenários":
         valor_cif = valor_cif_base + seguro
 
         st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
+        st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
         st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
         st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
 
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
 
-        # base_values["Valor CIF"] = valor_cif final (com seguro)
         base_values = {
-            "Valor CIF": valor_cif,
+            "Valor CIF": valor_cif,  # já com seguro
             "Valor FOB": valor_fob_usd,
             "Frete Internacional": frete_internacional_usd_rateado
         }
@@ -477,10 +474,10 @@ elif module_selected == "Simulador de Cenários":
                 if not tem_valor:
                     continue
 
-                # Calcula o custo do cenário (excluindo taxas_frete_brl)
+                # Calcula o custo do cenário (sem as taxas do frete BRL)
                 scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
-                # Soma as Taxas do Frete (BRL) fora do CIF
-                final_cost = scenario_cost + taxas_frete_brl
+                # Soma as Taxas do Frete (BRL) rateadas no final
+                final_cost = scenario_cost + taxas_frete_brl_rateada
 
                 costs[scenario] = {"Custo Total": final_cost}
 
@@ -508,8 +505,8 @@ elif module_selected == "Simulador de Cenários":
                             field_val *= occupancy_fraction
                         costs[scenario][field] = field_val
 
-                # Também armazenamos as taxas_frete_brl como item (caso queira exibir no DF)
-                costs[scenario]["Taxas Frete (BRL)"] = taxas_frete_brl
+                # Adicionamos a informação das taxas do frete rateadas como item
+                costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
 
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
@@ -543,6 +540,7 @@ elif module_selected == "Simulador de Cenários":
                     "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
                     "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
                     "taxas_frete_brl": taxas_frete_brl,
+                    "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
                     "taxa_cambio": taxa_cambio,
                     "seguro_0_15_valor_fob": float(0.0015 * (valor_fob_usd * taxa_cambio)),
                     "valor_cif": base_values["Valor CIF"],
@@ -584,6 +582,7 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"- **Percentual de Ocupação do Contêiner:** {format_brl(record.get('percentual_ocupacao_conteiner', 100.0))}%")
                 st.write(f"- **Frete Internacional Rateado (USD):** {format_brl(record.get('frete_internacional_usd_rateado', 0.0))}")
                 st.write(f"- **Taxas do Frete (BRL):** {format_brl(record.get('taxas_frete_brl', 0.0))}")
+                st.write(f"- **Taxas do Frete (BRL) Rateadas:** {format_brl(record.get('taxas_frete_brl_rateada', 0.0))}")
                 st.write(f"- **Taxa de Câmbio:** {format_brl(record.get('taxa_cambio', 0.0))}")
                 st.write(f"- **Seguro (0,15% do Valor FOB):** R$ {format_brl(record.get('seguro_0_15_valor_fob', 0.0))}")
                 st.write(f"- **Valor CIF Calculado (com Seguro):** {format_brl(record.get('valor_cif', 0.0))}")
