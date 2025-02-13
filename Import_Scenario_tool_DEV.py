@@ -54,7 +54,14 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
+# Função de cálculo do custo total usando a nova estrutura para campos
 def calculate_total_cost_extended(config, base_values, taxa_cambio):
+    """
+    config: dicionário de campos do cenário.
+    base_values: dicionário com as bases de cálculo, por exemplo:
+                 {"Valor CIF": valor_cif_final, "Valor FOB": valor_fob, "Frete Internacional": frete_int}.
+    taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases que estiverem em USD.
+    """
     extra = 0
     for field, conf in config.items():
         if not isinstance(conf, dict):
@@ -70,6 +77,7 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
                 if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
+    # Valor CIF em base_values já é o valor CIF final (com seguro), então somamos com extra
     return base_values.get("Valor CIF", 0) + extra
 
 def generate_csv(sim_record):
@@ -254,7 +262,8 @@ if module_selected == "Gerenciamento":
                                 del scenario_fields[field]
                                 save_data(data)
                                 st.success(f"Campo '{field}' removido com sucesso!")
-                                # st.experimental_rerun()  # Se der erro, usar st.stop() ou pedir reload manual
+                                # Em algumas versões, st.experimental_rerun() pode gerar erro
+                                # st.experimental_rerun()
                                 st.stop()
                 else:
                     st.info("Nenhum campo definido para este cenário.")
@@ -330,6 +339,7 @@ elif module_selected == "Simulador de Cenários":
     else:
         filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
         
+        # Seletor de modo de Valor FOB
         st.subheader("Forma de Inserir o Valor FOB")
         modo_valor_fob = st.selectbox(
             "Como deseja informar o Valor FOB?",
@@ -356,12 +366,19 @@ elif module_selected == "Simulador de Cenários":
         taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
         taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
 
-        valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
-        st.write(f"### Valor CIF Calculado: R$ {format_brl(valor_cif)}")
+        # Calcula CIF base
+        valor_cif_base = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
+        # Seguro = 0,15% do CIF base
+        seguro = 0.0015 * valor_cif_base
+        valor_cif = valor_cif_base + seguro
+
+        st.write(f"Seguro (0,15%): R$ {format_brl(seguro)}")
+        st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
 
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
 
         base_values = {
+            # "Valor CIF" passa a ser o valor CIF final (com seguro)
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
             "Frete Internacional": frete_internacional_usd
@@ -388,6 +405,7 @@ elif module_selected == "Simulador de Cenários":
                         tem_valor = True
                 if not tem_valor:
                     continue
+
                 total_cost = calculate_total_cost_extended(config, base_values, taxa_cambio)
                 costs[scenario] = {"Custo Total": total_cost}
                 
@@ -416,6 +434,7 @@ elif module_selected == "Simulador de Cenários":
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
             df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
             st.dataframe(df_display)
+
             chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
             chart = alt.Chart(chart_data).mark_bar().encode(
                 x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
@@ -423,9 +442,11 @@ elif module_selected == "Simulador de Cenários":
                 tooltip=['Cenário', 'Custo Total']
             ).properties(title="Comparativo de Custos por Cenário", width=700, height=400)
             st.altair_chart(chart, use_container_width=True)
+
             best_scenario = df.index[0]
             best_cost = df.iloc[0]['Custo Total']
             st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
+
             if st.button("Salvar Simulação no Histórico"):
                 history = load_history()
                 simulation_record = {
@@ -434,11 +455,12 @@ elif module_selected == "Simulador de Cenários":
                     "filial": filial_selected,
                     "modo_valor_fob": modo_valor_fob,
                     "valor_unit_fob_usd": valor_unit_fob_usd,
-                    "quantidade": quantidade,
+                    "quantidade": float(quantidade),
                     "valor_fob_usd": valor_fob_usd,
                     "frete_internacional_usd": frete_internacional_usd,
                     "taxas_frete_brl": taxas_frete_brl,
                     "taxa_cambio": taxa_cambio,
+                    "seguro_0_15": seguro,
                     "valor_cif": valor_cif,
                     "best_scenario": best_scenario,
                     "best_cost": best_cost,
@@ -478,12 +500,12 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"- **Frete Internacional (USD):** {format_brl(record.get('frete_internacional_usd', 0.0))}")
                 st.write(f"- **Taxas do Frete (BRL):** {format_brl(record.get('taxas_frete_brl', 0.0))}")
                 st.write(f"- **Taxa de Câmbio:** {format_brl(record.get('taxa_cambio', 0.0))}")
-                st.write(f"- **Valor CIF Calculado:** {format_brl(record.get('valor_cif', 0.0))}")
+                st.write(f"- **Seguro (0,15%):** R$ {format_brl(record.get('seguro_0_15', 0.0))}")
+                st.write(f"- **Valor CIF Calculado (com Seguro):** {format_brl(record.get('valor_cif', 0.0))}")
                 
                 st.markdown("**Resultados da Simulação:**")
                 st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
                 st.write(f"- **Custo Total:** R$ {format_brl(record['best_cost'])}")
-                # Se houver custo_unitario_melhor, exibe
                 if 'custo_unitario_melhor' in record:
                     st.write(f"- **Custo Unitário (Melhor Cenário):** R$ {format_brl(record['custo_unitario_melhor'])}")
                 
