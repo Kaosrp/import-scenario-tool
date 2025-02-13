@@ -49,7 +49,8 @@ def save_history(history):
 def calculate_total_cost_extended(config, base_values, taxa_cambio):
     """
     config: dicionário de campos do cenário.
-    base_values: dicionário com as bases de cálculo, ex.: {"Valor CIF": valor_cif, "Valor FOB": valor_fob_usd, ...}
+    base_values: dicionário com as bases de cálculo, por exemplo:
+                 {"Valor CIF": valor_cif, "Valor FOB": valor_fob, "Frete Internacional": frete_int}.
     taxa_cambio: taxa de câmbio (USD -> BRL) para converter as bases que estiverem em USD.
     """
     extra = 0
@@ -60,20 +61,20 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
             if conf.get("type") == "fixed":
                 extra += conf.get("value", 0)
             elif conf.get("type") == "percentage":
-                base = conf.get("base")
+                base = conf.get("base", "")
                 rate = conf.get("rate", 0)
                 base_val = base_values.get(base, 0)
-                # Se a base for "Valor FOB" ou "Frete Internacional", converte para BRL
+                # Se a base for "Valor FOB" ou "Frete Internacional" (em USD), converte para BRL
                 if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
-    # Retorna o Valor CIF (que já está em BRL) somado aos custos extras
+    # Valor CIF já está em BRL, somamos com o extra
     return base_values.get("Valor CIF", 0) + extra
 
 # Função para gerar CSV com os resultados da simulação
 def generate_csv(sim_record):
     results = sim_record["results"]
-    df = pd.DataFrame(results).T
+    df = pd.DataFrame(results).T  # Transpõe para melhor visualização
     csv_data = df.to_csv(index=True)
     return csv_data.encode('utf-8')
 
@@ -100,7 +101,7 @@ st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 # Carrega a base de dados
 data = load_data()
 
-# ----------------- MÓDULO: GERENCIAMENTO -----------------
+# ---------------- MÓDULO: GERENCIAMENTO ----------------
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
@@ -263,7 +264,7 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-# ----- Área de Configuração (apenas alteração de valores dos campos fixed) -----
+# ---------------- MÓDULO: CONFIGURAÇÃO ----------------
 elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
     if not data:
@@ -296,7 +297,7 @@ elif module_selected == "Configuração":
                                     save_data(data)
         st.success("Configuração atualizada e salva automaticamente!")
 
-# ----- Área do Simulador de Cenários usando a nova estrutura para cálculo -----
+# ---------------- MÓDULO: SIMULADOR DE CENÁRIOS ----------------
 elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     if not data:
@@ -317,7 +318,7 @@ elif module_selected == "Simulador de Cenários":
         # Campo para informar o nome do processo
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
         
-        # Dicionário de bases para o cálculo percentual
+        # Cria um dicionário de bases para o cálculo percentual
         base_values = {
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
@@ -334,8 +335,13 @@ elif module_selected == "Simulador de Cenários":
                     if isinstance(conf, dict):
                         if conf.get("type") == "fixed" and conf.get("value", 0) > 0:
                             tem_valor = True
-                        elif conf.get("type") == "percentage" and base_values.get(conf.get("base"), 0) * conf.get("rate", 0) > 0:
-                            tem_valor = True
+                        elif conf.get("type") == "percentage":
+                            base_name = conf.get("base", "")
+                            base_val = base_values.get(base_name, 0)
+                            if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                base_val = base_val * taxa_cambio
+                            if base_val * conf.get("rate", 0) > 0:
+                                tem_valor = True
                     elif conf > 0:
                         tem_valor = True
                 if not tem_valor:
@@ -347,7 +353,11 @@ elif module_selected == "Simulador de Cenários":
                         if conf.get("type") == "fixed":
                             field_val = conf.get("value", 0)
                         elif conf.get("type") == "percentage":
-                            field_val = base_values.get(conf.get("base"), 0) * conf.get("rate", 0)
+                            base_name = conf.get("base", "")
+                            base_val = base_values.get(base_name, 0)
+                            if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                base_val = base_val * taxa_cambio
+                            field_val = base_val * conf.get("rate", 0)
                         else:
                             field_val = conf
                     else:
@@ -388,7 +398,7 @@ elif module_selected == "Simulador de Cenários":
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
 
-# ----- Área do Histórico de Simulações com exportação para CSV -----
+# ---------------- MÓDULO: HISTÓRICO DE SIMULAÇÕES ----------------
 elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
