@@ -210,7 +210,7 @@ if module_selected == "Gerenciamento":
                             current_base = "Valor CIF"
 
                         # Ajuste de larguras para o layout
-                        col1, col2, col3, col4, col5 = st.columns([3, 2.5, 2.5, 2.5, 1.6])
+                        col1, col2, col3, col4, col5 = st.columns([3, 2.5, 2.5, 2.5, 1.7])
 
                         with col1:
                             st.write(f"**{field}**")
