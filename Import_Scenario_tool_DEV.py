@@ -66,6 +66,7 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
                 base = conf.get("base", "")
                 rate = conf.get("rate", 0)
                 base_val = base_values.get(base, 0)
+                # Se a base for "Valor FOB" ou "Frete Internacional", converte para BRL
                 if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
@@ -210,7 +211,7 @@ if module_selected == "Gerenciamento":
                             current_base = "Valor CIF"
 
                         # Ajuste de larguras para o layout
-                        col1, col2, col3, col4, col5 = st.columns([2.5, 2.5, 2.7, 2.5, 1.8])
+                        col1, col2, col3, col4, col5 = st.columns([3, 2.5, 2.5, 2.5, 1.5])
 
                         with col1:
                             st.write(f"**{field}**")
@@ -253,7 +254,8 @@ if module_selected == "Gerenciamento":
                                 del scenario_fields[field]
                                 save_data(data)
                                 st.success(f"Campo '{field}' removido com sucesso!")
-                               
+                                # st.experimental_rerun()  # Se der erro, usar st.stop() ou pedir reload manual
+                                st.stop()
                 else:
                     st.info("Nenhum campo definido para este cenário.")
 
@@ -327,19 +329,38 @@ elif module_selected == "Simulador de Cenários":
         st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
     else:
         filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-        st.subheader("Cálculo do Valor CIF")
+        
+        st.subheader("Forma de Inserir o Valor FOB")
+        modo_valor_fob = st.selectbox(
+            "Como deseja informar o Valor FOB?",
+            ["Valor Total", "Unitário × Quantidade"]
+        )
+
         col1, col2 = st.columns(2)
-        with col1:
-            valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
-            frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
-        with col2:
-            taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
-            taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
+        if modo_valor_fob == "Valor Total":
+            with col1:
+                valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
+                quantidade = 1.0
+                valor_unit_fob_usd = 0.0
+            with col2:
+                frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+        else:
+            with col1:
+                valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0)
+                quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0)
+                frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+                valor_fob_usd = valor_unit_fob_usd * quantidade
+            with col2:
+                st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
+
+        taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
+        taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
+
         valor_cif = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
         st.write(f"### Valor CIF Calculado: R$ {format_brl(valor_cif)}")
 
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
-        
+
         base_values = {
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
@@ -369,6 +390,11 @@ elif module_selected == "Simulador de Cenários":
                     continue
                 total_cost = calculate_total_cost_extended(config, base_values, taxa_cambio)
                 costs[scenario] = {"Custo Total": total_cost}
+                
+                # Se quantidade > 0, podemos exibir custo unitário
+                if quantidade > 0:
+                    costs[scenario]["Custo Unitário"] = total_cost / quantidade
+
                 for field, conf in config.items():
                     if isinstance(conf, dict):
                         if conf.get("type") == "fixed":
@@ -384,6 +410,7 @@ elif module_selected == "Simulador de Cenários":
                     else:
                         field_val = conf
                     costs[scenario][field] = field_val
+
         if costs:
             st.write("### Comparação de Cenários para a Filial Selecionada")
             df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
@@ -405,6 +432,9 @@ elif module_selected == "Simulador de Cenários":
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "processo_nome": processo_nome,
                     "filial": filial_selected,
+                    "modo_valor_fob": modo_valor_fob,
+                    "valor_unit_fob_usd": valor_unit_fob_usd,
+                    "quantidade": quantidade,
                     "valor_fob_usd": valor_fob_usd,
                     "frete_internacional_usd": frete_internacional_usd,
                     "taxas_frete_brl": taxas_frete_brl,
@@ -414,6 +444,10 @@ elif module_selected == "Simulador de Cenários":
                     "best_cost": best_cost,
                     "results": costs
                 }
+                # Se tiver quantidade > 0, também salva o custo unitário do melhor cenário
+                if quantidade > 0:
+                    simulation_record["custo_unitario_melhor"] = best_cost / quantidade
+
                 history.append(simulation_record)
                 save_history(history)
                 st.success("Simulação salva no histórico com sucesso!")
@@ -437,18 +471,27 @@ elif module_selected == "Histórico de Simulações":
             )
             with st.expander(expander_title):
                 st.markdown("**Parâmetros de Entrada:**")
-                st.write(f"- **Valor FOB (USD):** {format_brl(record['valor_fob_usd'])}")
-                st.write(f"- **Frete Internacional (USD):** {format_brl(record['frete_internacional_usd'])}")
-                st.write(f"- **Taxas do Frete (BRL):** {format_brl(record['taxas_frete_brl'])}")
-                st.write(f"- **Taxa de Câmbio:** {format_brl(record['taxa_cambio'])}")
-                st.write(f"- **Valor CIF Calculado:** {format_brl(record['valor_cif'])}")
+                st.write(f"- **Modo Valor FOB:** {record.get('modo_valor_fob', 'Valor Total')}")
+                st.write(f"- **Valor Unitário FOB (USD/unidade):** {format_brl(record.get('valor_unit_fob_usd', 0.0))}")
+                st.write(f"- **Quantidade:** {format_brl(record.get('quantidade', 0.0))}")
+                st.write(f"- **Valor FOB (USD):** {format_brl(record.get('valor_fob_usd', 0.0))}")
+                st.write(f"- **Frete Internacional (USD):** {format_brl(record.get('frete_internacional_usd', 0.0))}")
+                st.write(f"- **Taxas do Frete (BRL):** {format_brl(record.get('taxas_frete_brl', 0.0))}")
+                st.write(f"- **Taxa de Câmbio:** {format_brl(record.get('taxa_cambio', 0.0))}")
+                st.write(f"- **Valor CIF Calculado:** {format_brl(record.get('valor_cif', 0.0))}")
+                
                 st.markdown("**Resultados da Simulação:**")
                 st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
                 st.write(f"- **Custo Total:** R$ {format_brl(record['best_cost'])}")
+                # Se houver custo_unitario_melhor, exibe
+                if 'custo_unitario_melhor' in record:
+                    st.write(f"- **Custo Unitário (Melhor Cenário):** R$ {format_brl(record['custo_unitario_melhor'])}")
+                
                 st.markdown("**Resultados Completos:**")
                 results_df = pd.DataFrame(record["results"]).T
                 results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                 st.dataframe(results_df_display)
+                
                 csv_bytes = generate_csv(record)
                 file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.csv"
                 st.download_button("Exportar Resultados para CSV", data=csv_bytes, file_name=file_name, mime="text/csv")
