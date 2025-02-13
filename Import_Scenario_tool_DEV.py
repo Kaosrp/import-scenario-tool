@@ -63,10 +63,11 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio):
                 base = conf.get("base")
                 rate = conf.get("rate", 0)
                 base_val = base_values.get(base, 0)
-                # Converte a base se for "Valor FOB" ou "Frete Internacional"
-                if base.lower() in ["valor fob", "frete internacional"]:
+                # Se a base for "Valor FOB" ou "Frete Internacional", converte para BRL
+                if base and base.strip().lower() in ["valor fob", "frete internacional"]:
                     base_val = base_val * taxa_cambio
                 extra += base_val * rate
+    # Retorna o Valor CIF (que já está em BRL) somado aos custos extras
     return base_values.get("Valor CIF", 0) + extra
 
 # Função para gerar CSV com os resultados da simulação
@@ -80,7 +81,7 @@ st.title("Ferramenta de Análise de Cenários de Importação")
 
 # ----- Mecanismo de Seleção de Módulo na Sidebar com Botões -----
 if 'module' not in st.session_state:
-    st.session_state.module = "Simulador de Cenários"
+    st.session_state.module = "Simulador de Cenários"  # Módulo padrão
 
 st.sidebar.markdown("### Selecione o Módulo:")
 if st.sidebar.button("Simulador de Cenários"):
@@ -99,7 +100,7 @@ st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 # Carrega a base de dados
 data = load_data()
 
-# ----- Área de Gerenciamento -----
+# ----------------- MÓDULO: GERENCIAMENTO -----------------
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
@@ -180,7 +181,7 @@ if module_selected == "Gerenciamento":
                 else:
                     st.warning("Digite um nome válido para o cenário.")
     
-    # Gerenciamento de Campos de Custo – Definição completa do campo
+    # Gerenciamento de Campos de Custo – Criação, edição e remoção
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -262,7 +263,7 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-# ----- Área de Configuração (Apenas alteração dos valores dos campos do tipo fixed) -----
+# ----- Área de Configuração (apenas alteração de valores dos campos fixed) -----
 elif module_selected == "Configuração":
     st.header("Configuração de Base de Custos por Filial")
     if not data:
