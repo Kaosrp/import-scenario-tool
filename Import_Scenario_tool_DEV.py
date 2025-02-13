@@ -89,8 +89,9 @@ def generate_csv(sim_record):
 
 st.title("Ferramenta de Análise de Cenários de Importação")
 
+# Define o módulo padrão (Simulador) se não houver um selecionado ainda
 if 'module' not in st.session_state:
-    st.session_state.module = "Simulador de Cenários"  # Módulo padrão inicial
+    st.session_state.module = "Simulador de Cenários"
 
 st.sidebar.markdown("### Selecione o Módulo:")
 if st.sidebar.button("Simulador de Cenários"):
@@ -207,36 +208,41 @@ if module_selected == "Gerenciamento":
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
+                        # Descobre config atual
                         if isinstance(current, dict):
                             current_type = current.get("type", "fixed")
-                            current_fixed = float(current.get("value", 0)) if current_type=="fixed" else 0.0
-                            current_rate = float(current.get("rate", 0)) if current_type=="percentage" else 0.0
-                            current_base = current.get("base", "Valor CIF") if current_type=="percentage" else "Valor CIF"
+                            current_fixed = float(current.get("value", 0)) if current_type == "fixed" else 0.0
+                            current_rate = float(current.get("rate", 0)) if current_type == "percentage" else 0.0
+                            current_base = current.get("base", "Valor CIF") if current_type == "percentage" else "Valor CIF"
                         else:
                             current_type = "fixed"
                             current_fixed = float(current)
                             current_rate = 0.0
                             current_base = "Valor CIF"
 
+                        # Cria colunas para exibir numa única linha
                         col1, col2, col3, col4, col5 = st.columns([3, 2.5, 2.5, 2.5, 1.5])
 
                         with col1:
                             st.write(f"**{field}**")
 
                         with col2:
+                            # Tipo: fixed ou percentage
                             novo_tipo = st.selectbox("Tipo",
                                                      ["fixed", "percentage"],
                                                      index=0 if current_type=="fixed" else 1,
                                                      key=f"tipo_{filial_for_field}_{scenario_for_field}_{field}")
 
+                        # Monta um dicionário com a nova configuração
+                        novo_config = {}
                         if novo_tipo == "fixed":
                             with col3:
                                 novo_valor = st.number_input("Valor Fixo",
                                                              min_value=0.0,
                                                              value=current_fixed,
                                                              key=f"fixo_{filial_for_field}_{scenario_for_field}_{field}")
-                            scenario_fields[field] = {"type": "fixed", "value": novo_valor}
-                            col4.write("")
+                            novo_config = {"type": "fixed", "value": novo_valor}
+                            col4.write("")  # Base não se aplica para fixed
                         else:
                             with col3:
                                 nova_taxa = st.number_input("Taxa (%)",
@@ -249,11 +255,17 @@ if module_selected == "Gerenciamento":
                                                          ["Valor CIF", "Valor FOB", "Frete Internacional"],
                                                          index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(current_base),
                                                          key=f"base_{filial_for_field}_{scenario_for_field}_{field}")
-                            scenario_fields[field] = {
+                            novo_config = {
                                 "type": "percentage",
-                                "rate": nova_taxa/100.0,
+                                "rate": nova_taxa / 100.0,
                                 "base": nova_base
                             }
+
+                        # Verifica se algo mudou; se sim, salva
+                        if novo_config != current:
+                            scenario_fields[field] = novo_config
+                            save_data(data)
+                            st.success(f"Campo '{field}' atualizado com sucesso!")
 
                         with col5:
                             if st.button("Remover", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
@@ -334,7 +346,6 @@ elif module_selected == "Simulador de Cenários":
     else:
         filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
         
-        # Seletor de modo de Valor FOB
         st.subheader("Forma de Inserir o Valor FOB")
         modo_valor_fob = st.selectbox(
             "Como deseja informar o Valor FOB?",
@@ -363,7 +374,7 @@ elif module_selected == "Simulador de Cenários":
 
         # 1) CIF base (sem seguro)
         valor_cif_base = (valor_fob_usd + frete_internacional_usd) * taxa_cambio + taxas_frete_brl
-        # 2) Seguro = 0,15% sobre (Valor FOB em BRL) => valor_fob_usd * taxa_cambio
+        # 2) Seguro = 0,15% sobre o Valor FOB (USD -> BRL)
         seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
         # 3) Valor CIF final = CIF base + seguro
         valor_cif = valor_cif_base + seguro
@@ -373,8 +384,8 @@ elif module_selected == "Simulador de Cenários":
 
         processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
 
+        # base_values["Valor CIF"] = valor_cif final (com seguro)
         base_values = {
-            # "Valor CIF" é o valor CIF final (com seguro)
             "Valor CIF": valor_cif,
             "Valor FOB": valor_fob_usd,
             "Frete Internacional": frete_internacional_usd
@@ -405,7 +416,7 @@ elif module_selected == "Simulador de Cenários":
                 total_cost = calculate_total_cost_extended(config, base_values, taxa_cambio)
                 costs[scenario] = {"Custo Total": total_cost}
                 
-                # Se quantidade > 0, podemos exibir custo unitário
+                # Se quantidade > 0, exibimos custo unitário
                 if quantidade > 0:
                     costs[scenario]["Custo Unitário"] = total_cost / quantidade
 
@@ -456,7 +467,7 @@ elif module_selected == "Simulador de Cenários":
                     "frete_internacional_usd": frete_internacional_usd,
                     "taxas_frete_brl": taxas_frete_brl,
                     "taxa_cambio": taxa_cambio,
-                    "seguro_0_15_valor_fob": seguro,
+                    "seguro_0_15_valor_fob": float(seguro),
                     "valor_cif": valor_cif,
                     "best_scenario": best_scenario,
                     "best_cost": best_cost,
