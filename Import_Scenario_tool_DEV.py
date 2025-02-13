@@ -90,12 +90,12 @@ if st.sidebar.button("Histórico de Simulações"):
 
 module_selected = st.session_state.module
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------------------
 
 # Carrega a base de dados
 data = load_data()
 
-# ----- Área de Gerenciamento (sem alterações relacionadas ao problema) -----
+# ----- Área de Gerenciamento -----
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
@@ -258,7 +258,7 @@ elif module_selected == "Configuração":
                             else:
                                 nova_taxa = st.number_input(f"Taxa (%) para {field}",
                                                             min_value=0.0,
-                                                            value=current_rate * 100,
+                                                            value=float(current_rate)*100.0,
                                                             step=0.1,
                                                             key=f"taxa_{filial}_{scenario}_{field}")
                                 nova_base = st.selectbox(f"Base para {field}",
@@ -399,3 +399,4 @@ elif module_selected == "Histórico de Simulações":
                 st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
+
