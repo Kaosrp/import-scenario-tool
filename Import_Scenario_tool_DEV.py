@@ -659,6 +659,8 @@ if module_selected == "Simulador de Cenários":
                             "best_cost": best_cost,
                             "results": {}  # armazenaremos os dados de multi_costs
                         }
+                        # Converte os índices do DataFrame (que podem ser tuplas) para strings
+                        df_multi.index = df_multi.index.map(lambda x: " | ".join(map(str, x)) if isinstance(x, tuple) else str(x))
                         simulation_record["results"] = df_multi.to_dict(orient="index")
 
                         history.append(simulation_record)
