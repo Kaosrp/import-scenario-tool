@@ -6,7 +6,9 @@ import altair as alt
 from datetime import datetime
 import io
 
-# Função para formatar números no padrão "1.234,56"
+# ============================
+# Funções de Formatação
+# ============================
 def format_brl(x):
     try:
         s = "{:,.2f}".format(float(x))
@@ -15,7 +17,9 @@ def format_brl(x):
     except:
         return x
 
-# Injeção de CSS para habilitar scroll horizontal na lista de abas (caso necessário)
+# ============================
+# CSS para scroll horizontal nas abas
+# ============================
 st.markdown(
     """
     <style>
@@ -28,10 +32,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Arquivos para os dados e para o histórico de simulações
+# ============================
+# Arquivos de Dados
+# ============================
 data_file = "cost_config.json"
 history_file = "simulation_history.json"
+product_file = "products.json"  # novo para gerenciamento de produtos
 
+# ============================
+# Funções de Gerenciamento de Configurações (Filiais, Cenários, Campos de Custo)
+# ============================
 def load_data():
     if os.path.exists(data_file):
         with open(data_file, "r") as f:
@@ -43,6 +53,9 @@ def save_data(data):
     with open(data_file, "w") as f:
         json.dump(data, f, indent=4)
 
+# ============================
+# Funções de Histórico de Simulações
+# ============================
 def load_history():
     if os.path.exists(history_file):
         try:
@@ -52,7 +65,6 @@ def load_history():
                     return []
                 return json.loads(conteudo)
         except json.JSONDecodeError:
-            # Se ocorrer erro na decodificação do JSON, retorna lista vazia
             return []
     else:
         return []
@@ -61,13 +73,30 @@ def save_history(history):
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
 
+# ============================
+# Funções de Gerenciamento de Produtos
+# ============================
+def load_products():
+    if os.path.exists(product_file):
+        try:
+            with open(product_file, "r") as f:
+                conteudo = f.read().strip()
+                if not conteudo:
+                    return {}
+                return json.loads(conteudo)
+        except json.JSONDecodeError:
+            return {}
+    else:
+        return {}
+
+def save_products(products):
+    with open(product_file, "w") as f:
+        json.dump(products, f, indent=4)
+
+# ============================
+# Cálculo de Custos dos Cenários
+# ============================
 def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction):
-    """
-    config: dicionário de campos do cenário.
-    base_values: ex.: {"Valor CIF": valor_cif_final, "Valor FOB": valor_fob, "Frete Internacional": frete_int_rateado}
-    taxa_cambio: taxa de câmbio (USD -> BRL).
-    occupancy_fraction: fração de ocupação do contêiner (ex.: 0.5 para 50%).
-    """
     extra = 0
     for field, conf in config.items():
         if not isinstance(conf, dict):
@@ -86,14 +115,31 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fr
                 cost_value = base_val * rate
             else:
                 cost_value = 0
-
             if rate_by_occupancy:
                 cost_value *= occupancy_fraction
-        
         extra += cost_value
-    
     return base_values.get("Valor CIF", 0) + extra
 
+# ============================
+# Cálculo dos Impostos do Produto
+# ============================
+def calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction):
+    # Para cada imposto (II, IPI, Pis, Cofins) o produto possui um dicionário com "rate" e "base"
+    taxes = {}
+    for tax in ["imposto_importacao", "ipi", "pis", "cofins"]:
+        tax_info = product.get(tax, None)
+        if tax_info:
+            base_name = tax_info.get("base", "")
+            base_val = base_values.get(base_name, 0)
+            # Cálculo simples: valor = base * rate
+            taxes[tax] = base_val * tax_info.get("rate", 0)
+        else:
+            taxes[tax] = 0
+    return taxes
+
+# ============================
+# Função para gerar CSV (opcional)
+# ============================
 def generate_csv(sim_record):
     results = sim_record["results"]
     df = pd.DataFrame(results).T
@@ -101,8 +147,9 @@ def generate_csv(sim_record):
     csv_data = df_formatted.to_csv(index=True, sep=";")
     return csv_data.encode('utf-8')
 
-st.title("Ferramenta de Análise de Cenários de Importação")
-
+# ============================
+# Controle de Módulos na Aplicação
+# ============================
 if 'module' not in st.session_state:
     st.session_state.module = "Simulador de Cenários"
 
@@ -111,20 +158,27 @@ if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Gerenciamento"):
     st.session_state.module = "Gerenciamento"
+if st.sidebar.button("Produtos"):
+    st.session_state.module = "Produtos"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
 module_selected = st.session_state.module
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 
+# ============================
+# Carrega dados de configurações e produtos
+# ============================
 data = load_data()
+products = load_products()
 
-# ---------------- MÓDULO: GERENCIAMENTO ----------------
+# ============================
+# MÓDULO: GERENCIAMENTO (Filiais, Cenários, Campos de Custo)
+# ============================
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
-
-    # (1) Gerenciamento de Filiais
+    # -- (1) Gerenciamento de Filiais --
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -140,7 +194,6 @@ if module_selected == "Gerenciamento":
                     st.info("Recarregue a página para ver as alterações.")
             else:
                 st.warning("Digite um nome válido para a filial.")
-
         st.markdown("### Filiais existentes:")
         if data:
             for filial in list(data.keys()):
@@ -155,8 +208,7 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
-
-    # (2) Gerenciamento de Cenários
+    # -- (2) Gerenciamento de Cenários --
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -200,8 +252,7 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
-
-    # (3) Gerenciamento de Campos de Custo
+    # -- (3) Gerenciamento de Campos de Custo --
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -215,7 +266,6 @@ if module_selected == "Gerenciamento":
                 scenario_fields = data[filial_for_field][scenario_for_field]
                 st.markdown("### Campos Existentes:")
                 st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
-
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
@@ -231,18 +281,14 @@ if module_selected == "Gerenciamento":
                             current_rate = 0.0
                             current_base = "Valor CIF"
                             current_rate_occ = False
-
                         col1, col2, col3, col4, col5, col6 = st.columns([3, 2.5, 2.5, 2.5, 2, 1.5])
-
                         with col1:
                             st.write(f"**{field}**")
-
                         with col2:
                             novo_tipo = st.selectbox("Tipo",
                                                      ["fixed", "percentage"],
                                                      index=0 if current_type=="fixed" else 1,
                                                      key=f"tipo_{filial_for_field}_{scenario_for_field}_{field}")
-
                         novo_config = {}
                         if novo_tipo == "fixed":
                             with col3:
@@ -269,17 +315,14 @@ if module_selected == "Gerenciamento":
                                 "rate": nova_taxa / 100.0,
                                 "base": nova_base
                             }
-
                         with col5:
                             novo_rate_occ = st.checkbox("Ratear?", value=current_rate_occ,
                                                         key=f"rate_occ_{filial_for_field}_{scenario_for_field}_{field}")
                             novo_config["rate_by_occupancy"] = novo_rate_occ
-
                         if novo_config != current:
                             scenario_fields[field] = novo_config
                             save_data(data)
                             st.success(f"Campo '{field}' atualizado com sucesso!")
-
                         with col6:
                             if st.button("Remover", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
                                 del scenario_fields[field]
@@ -288,7 +331,6 @@ if module_selected == "Gerenciamento":
                                 st.stop()
                 else:
                     st.info("Nenhum campo definido para este cenário.")
-
                 st.markdown("### Adicionar Novo Campo")
                 new_field = st.text_input("Nome do Novo Campo", key="novo_campo")
                 if new_field:
@@ -300,7 +342,6 @@ if module_selected == "Gerenciamento":
                         field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
                         base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
                     rate_occ_new = st.checkbox("Ratear pela Ocupação do Contêiner?", value=False, key=f"rate_occ_new_{new_field}")
-
                     if st.button("Adicionar Campo", key=f"adicionar_{new_field}"):
                         new_field_stripped = new_field.strip()
                         if new_field_stripped in scenario_fields:
@@ -323,25 +364,102 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-# ---------------- MÓDULO: SIMULADOR DE CENÁRIOS ----------------
-if module_selected == "Simulador de Cenários":
+# ============================
+# MÓDULO: GERENCIAMENTO DE PRODUTOS
+# ============================
+elif module_selected == "Produtos":
+    st.header("Gerenciamento de Produtos (NCM)")
+    st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+    # Exibe produtos existentes
+    if products:
+        st.markdown("### Produtos Cadastrados:")
+        for ncm in list(products.keys()):
+            prod = products[ncm]
+            col1, col2, col3 = st.columns([3, 3, 1])
+            with col1:
+                st.write(f"**NCM:** {ncm}  \n **Descrição:** {prod.get('descricao','')}")
+                st.write(f"**II:** {prod.get('imposto_importacao', {}).get('rate',0)*100}% (Base: {prod.get('imposto_importacao', {}).get('base','')})")
+                st.write(f"**IPI:** {prod.get('ipi', {}).get('rate',0)*100}% (Base: {prod.get('ipi', {}).get('base','')})")
+                st.write(f"**Pis:** {prod.get('pis', {}).get('rate',0)*100}% (Base: {prod.get('pis', {}).get('base','')})")
+                st.write(f"**Cofins:** {prod.get('cofins', {}).get('rate',0)*100}% (Base: {prod.get('cofins', {}).get('base','')})")
+            with col2:
+                if st.button("Editar", key=f"edit_{ncm}"):
+                    st.session_state.edit_product = ncm
+                    st.experimental_rerun()
+            with col3:
+                if st.button("Excluir", key=f"del_{ncm}"):
+                    del products[ncm]
+                    save_products(products)
+                    st.success(f"Produto {ncm} excluído!")
+                    st.experimental_rerun()
+    else:
+        st.info("Nenhum produto cadastrado.")
+    st.markdown("---")
+    # Formulário para adicionar/editar produto
+    edit_mode = st.session_state.get("edit_product", None)
+    if edit_mode:
+        st.subheader(f"Editar Produto (NCM: {edit_mode})")
+        prod_data = products.get(edit_mode, {})
+    else:
+        st.subheader("Adicionar Novo Produto")
+        prod_data = {}
+    ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "")
+    descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""))
+    st.markdown("#### Alíquotas de Impostos (valores em %)")
+    # Para cada imposto, entrada do rate (dividido por 100 no armazenamento) e base
+    ii_rate = st.number_input("Imposto de Importação (II)", min_value=0.0, value=prod_data.get("imposto_importacao", {}).get("rate", 0.0)*100, step=0.1)
+    ii_base = st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ii_base") if not prod_data.get("imposto_importacao") else st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")), key="ii_base")
+    
+    ipi_rate = st.number_input("IPI", min_value=0.0, value=prod_data.get("ipi", {}).get("rate", 0.0)*100, step=0.1)
+    ipi_base = st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ipi_base") if not prod_data.get("ipi") else st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("ipi", {}).get("base", "Valor CIF")), key="ipi_base")
+    
+    pis_rate = st.number_input("Pis", min_value=0.0, value=prod_data.get("pis", {}).get("rate", 0.0)*100, step=0.1)
+    pis_base = st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="pis_base") if not prod_data.get("pis") else st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("pis", {}).get("base", "Valor CIF")), key="pis_base")
+    
+    cofins_rate = st.number_input("Cofins", min_value=0.0, value=prod_data.get("cofins", {}).get("rate", 0.0)*100, step=0.1)
+    cofins_base = st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="cofins_base") if not prod_data.get("cofins") else st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("cofins", {}).get("base", "Valor CIF")), key="cofins_base")
+    
+    if st.button("Salvar Produto"):
+        if not ncm_input.strip():
+            st.warning("Informe o NCM.")
+        else:
+            product_record = {
+                "descricao": descricao,
+                "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
+                "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
+                "pis": {"rate": pis_rate/100.0, "base": pis_base},
+                "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
+            }
+            products[ncm_input.strip()] = product_record
+            save_products(products)
+            st.success("Produto salvo com sucesso!")
+            if "edit_product" in st.session_state:
+                del st.session_state.edit_product
+            st.experimental_rerun()
+
+# ============================
+# MÓDULO: SIMULADOR DE CENÁRIOS
+# ============================
+elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
-
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
-
+    
+    # Na simulação única, permite selecionar um produto (NCM) se houver produtos cadastrados
     if sim_mode == "Simulador Único":
-        # ----- SIMULADOR ÚNICO -----
+        if products:
+            product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
+            product = products[product_key]
+        else:
+            st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
+            product = None
+
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
             
             st.subheader("Forma de Inserir o Valor FOB")
-            modo_valor_fob = st.selectbox(
-                "Como deseja informar o Valor FOB?",
-                ["Valor Total", "Unitário × Quantidade"]
-            )
-
+            modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
                 with col1:
@@ -358,37 +476,30 @@ if module_selected == "Simulador de Cenários":
                     valor_fob_usd = valor_unit_fob_usd * quantidade
                 with col2:
                     st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
-
-            percentual_ocupacao_conteiner = st.number_input(
-                "Percentual de Ocupação do Contêiner (%)",
-                min_value=0.0, max_value=100.0, value=100.0
-            )
+            
+            percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0)
             occupancy_fraction = percentual_ocupacao_conteiner / 100.0
-
             frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
-
             taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
             taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
-
             taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
-
+            
             valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
             seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
             valor_cif = valor_cif_base + seguro
-
+            
             st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
             st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
             st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
             st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
-
+            
             processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
-
             base_values = {
                 "Valor CIF": valor_cif,
                 "Valor FOB": valor_fob_usd,
                 "Frete Internacional": frete_internacional_usd_rateado
             }
-
+            
             costs = {}
             if filial_selected in data:
                 for scenario, config in data[filial_selected].items():
@@ -411,14 +522,11 @@ if module_selected == "Simulador de Cenários":
                             tem_valor = True
                     if not tem_valor:
                         continue
-
                     scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                     final_cost = scenario_cost + taxas_frete_brl_rateada
-
                     costs[scenario] = {"Custo Total": final_cost}
                     if quantidade > 0:
                         costs[scenario]["Custo Unitário"] = final_cost / quantidade
-
                     for field, conf in config.items():
                         if isinstance(conf, dict):
                             field_type = conf.get("type", "fixed")
@@ -437,15 +545,12 @@ if module_selected == "Simulador de Cenários":
                             if rate_by_occupancy:
                                 field_val *= occupancy_fraction
                             costs[scenario][field] = field_val
-
                     costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
-
                 if costs:
                     st.write("### Comparação de Cenários para a Filial Selecionada")
                     df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
                     df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.dataframe(df_display)
-
                     chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
                     chart = alt.Chart(chart_data).mark_bar().encode(
                         x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
@@ -453,11 +558,23 @@ if module_selected == "Simulador de Cenários":
                         tooltip=['Cenário', 'Custo Total']
                     ).properties(title="Comparativo de Cenários", width=700, height=400)
                     st.altair_chart(chart, use_container_width=True)
-
                     best_scenario = df.index[0]
                     best_cost = df.iloc[0]['Custo Total']
                     st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
-
+                    
+                    # Se um produto foi selecionado, calcula os impostos do produto
+                    if product:
+                        product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                        total_product_taxes = sum(product_taxes.values())
+                        st.write("### Impostos do Produto:")
+                        st.write(f"Imposto de Importação (II): R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
+                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
+                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
+                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
+                        overall_cost = final_cost + total_product_taxes
+                        st.write(f"### Custo Final com Impostos do Produto: R$ {format_brl(overall_cost)}")
+                    else:
+                        overall_cost = final_cost
                     if st.button("Salvar Simulação no Histórico"):
                         history = load_history()
                         simulation_record = {
@@ -479,18 +596,23 @@ if module_selected == "Simulador de Cenários":
                             "best_scenario": best_scenario,
                             "best_cost": best_cost,
                             "results": costs,
-                            "multi_comparison": False  # Indica que é simulação única
+                            "multi_comparison": False
                         }
+                        # Se houver produto, inclui dados do produto e dos impostos
+                        if product:
+                            simulation_record["produto"] = {
+                                "ncm": product_key,
+                                "descricao": product.get("descricao", "")
+                            }
+                            simulation_record["product_taxes"] = product_taxes
+                            simulation_record["final_cost_com_impostos"] = overall_cost
                         if quantidade > 0:
                             simulation_record["custo_unitario_melhor"] = best_cost / quantidade
-
                         history.append(simulation_record)
                         save_history(history)
                         st.success("Simulação salva no histórico com sucesso!")
                 else:
-                    st.warning("Nenhuma configuração encontrada para a filial selecionada. "
-                               "Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-
+                    st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
     else:
         # ----- COMPARAÇÃO MULTIFILIAL -----
         st.subheader("Comparação Multifilial")
@@ -500,12 +622,7 @@ if module_selected == "Simulador de Cenários":
             filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()))
             if filiais_multi:
                 st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
-
-                modo_valor_fob = st.selectbox(
-                    "Como deseja informar o Valor FOB?",
-                    ["Valor Total", "Unitário × Quantidade"]
-                )
-
+                modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
                 col1, col2 = st.columns(2)
                 if modo_valor_fob == "Valor Total":
                     with col1:
@@ -522,35 +639,24 @@ if module_selected == "Simulador de Cenários":
                         valor_fob_usd = valor_unit_fob_usd * quantidade
                     with col2:
                         st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
-
-                percentual_ocupacao_conteiner = st.number_input(
-                    "Percentual de Ocupação do Contêiner (%)",
-                    min_value=0.0, max_value=100.0, value=100.0
-                )
+                percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0)
                 occupancy_fraction = percentual_ocupacao_conteiner / 100.0
-
                 frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
-
                 taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
                 taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
-
                 taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
-
                 valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
                 seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
                 valor_cif = valor_cif_base + seguro
-
                 st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
                 st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
                 st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
-
                 base_values = {
                     "Valor CIF": valor_cif,
                     "Valor FOB": valor_fob_usd,
                     "Frete Internacional": frete_internacional_usd_rateado
                 }
-
                 multi_costs = {}
                 for filial in filiais_multi:
                     if filial not in data:
@@ -575,10 +681,8 @@ if module_selected == "Simulador de Cenários":
                                 tem_valor = True
                         if not tem_valor:
                             continue
-
                         scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                         final_cost = scenario_cost + taxas_frete_brl_rateada
-
                         multi_costs[(filial, scenario)] = {
                             "Filial": filial,
                             "Cenário": scenario,
@@ -586,7 +690,6 @@ if module_selected == "Simulador de Cenários":
                         }
                         if quantidade > 0:
                             multi_costs[(filial, scenario)]["Custo Unitário"] = final_cost / quantidade
-
                         for field, conf in config.items():
                             if isinstance(conf, dict):
                                 field_type = conf.get("type", "fixed")
@@ -607,17 +710,13 @@ if module_selected == "Simulador de Cenários":
                             else:
                                 field_val = conf
                             multi_costs[(filial, scenario)][field] = field_val
-
                         multi_costs[(filial, scenario)]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
-
                 if multi_costs:
                     df_multi = pd.DataFrame(multi_costs).T
                     df_multi = df_multi.sort_values(by="Custo Total")
-
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.write("### Comparação Global (Multifilial)")
                     st.dataframe(df_display)
-
                     chart_data = df_multi.reset_index()
                     chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
                     chart = alt.Chart(chart_data).mark_bar().encode(
@@ -626,15 +725,11 @@ if module_selected == "Simulador de Cenários":
                         tooltip=['Filial_Cenario', 'Custo Total']
                     ).properties(title="Comparativo Multifilial", width=700, height=400)
                     st.altair_chart(chart, use_container_width=True)
-
                     best_row = df_multi.iloc[0]
                     best_filial = best_row["Filial"]
                     best_scenario = best_row["Cenário"]
                     best_cost = best_row["Custo Total"]
-                    st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** "
-                             f"com custo total de **R$ {format_brl(best_cost)}**.")
-
-                    # Botão para salvar comparação multifilial no histórico
+                    st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo total de **R$ {format_brl(best_cost)}**.")
                     if st.button("Salvar Comparação no Histórico"):
                         history = load_history()
                         processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
@@ -658,27 +753,25 @@ if module_selected == "Simulador de Cenários":
                             "best_filial": best_filial,
                             "best_scenario": best_scenario,
                             "best_cost": best_cost,
-                            "results": {}  # armazenaremos os dados de multi_costs
+                            "results": {}
                         }
-                        # Converte os índices do DataFrame (que podem ser tuplas) para strings
                         df_multi.index = df_multi.index.map(lambda x: " | ".join(map(str, x)) if isinstance(x, tuple) else str(x))
                         simulation_record["results"] = df_multi.to_dict(orient="index")
-
                         history.append(simulation_record)
                         save_history(history)
                         st.success("Comparação Multifilial salva no histórico com sucesso!")
                 else:
-                    st.warning("Nenhuma configuração encontrada para as filiais selecionadas. "
-                               "Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+                    st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
             else:
                 st.info("Selecione pelo menos uma filial para comparar.")
 
-# ---------------- MÓDULO: HISTÓRICO DE SIMULAÇÕES ----------------
+# ============================
+# MÓDULO: HISTÓRICO DE SIMULAÇÕES
+# ============================
 elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
     if history:
-        # Ordena o histórico por timestamp (mais recente primeiro)
         sorted_history = sorted(history, key=lambda r: datetime.strptime(r['timestamp'], "%Y-%m-%d %H:%M:%S"), reverse=True)
         st.markdown("### Registros de Simulação")
         for record in sorted_history:
@@ -716,7 +809,6 @@ elif module_selected == "Histórico de Simulações":
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
-                # Botão para excluir este registro individualmente
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
                     history.remove(record)
                     save_history(history)
