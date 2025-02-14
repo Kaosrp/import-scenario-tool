@@ -176,8 +176,192 @@ products = load_products()
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
-    # ... (código de gerenciamento de filiais, cenários e campos permanece inalterado) ...
-    # [O código de gerenciamento permanece o mesmo conforme versões anteriores.]
+    # -- (1) Gerenciamento de Filiais --
+    with management_tabs[0]:
+        st.subheader("Gerenciamento de Filiais")
+        new_filial = st.text_input("Nova Filial", key="new_filial_input")
+        if st.button("Adicionar Filial"):
+            new_filial_stripped = new_filial.strip()
+            if new_filial_stripped:
+                if new_filial_stripped in data:
+                    st.warning("Filial já existe!")
+                else:
+                    data[new_filial_stripped] = {}
+                    save_data(data)
+                    st.success("Filial adicionada com sucesso!")
+                    st.info("Recarregue a página para ver as alterações.")
+            else:
+                st.warning("Digite um nome válido para a filial.")
+        st.markdown("### Filiais existentes:")
+        if data:
+            for filial in list(data.keys()):
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(filial)
+                with col2:
+                    if st.button("Excluir", key="delete_filial_" + filial):
+                        del data[filial]
+                        save_data(data)
+                        st.success(f"Filial '{filial}' excluída.")
+                        st.info("Recarregue a página para ver as alterações.")
+        else:
+            st.info("Nenhuma filial cadastrada.")
+    # -- (2) Gerenciamento de Cenários --
+    with management_tabs[1]:
+        st.subheader("Gerenciamento de Cenários")
+        if not data:
+            st.warning("Nenhuma filial cadastrada. Adicione uma filial na aba Filiais!")
+        else:
+            filial_select = st.selectbox("Selecione a Filial", list(data.keys()), key="select_filial_for_scenario")
+            scenarios_list = list(data[filial_select].keys())
+            st.markdown("### Cenários existentes:")
+            if scenarios_list:
+                for scenario in scenarios_list:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(scenario)
+                    with col2:
+                        if st.button("Excluir", key="delete_scenario_" + filial_select + "_" + scenario):
+                            del data[filial_select][scenario]
+                            save_data(data)
+                            st.success(f"Cenário '{scenario}' excluído da filial '{filial_select}'.")
+                            st.info("Recarregue a página para ver as alterações.")
+            else:
+                st.info("Nenhum cenário cadastrado para essa filial.")
+            new_scenario = st.text_input("Novo Cenário", key="new_scenario_input")
+            if st.button("Adicionar Cenário"):
+                new_scenario_stripped = new_scenario.strip()
+                if new_scenario_stripped:
+                    if new_scenario_stripped in data[filial_select]:
+                        st.warning("Cenário já existe para essa filial!")
+                    else:
+                        data[filial_select][new_scenario_stripped] = {
+                            "Frete rodoviário": 0,
+                            "ICMS": 0,
+                            "IPI": 0,
+                            "Taxa MAPA": 0,
+                            "Taxas Porto Seco": 0,
+                            "Desova EAD": 0,
+                            "Taxa cross docking": 0,
+                            "Taxa DDC": 0
+                        }
+                        save_data(data)
+                        st.success("Cenário adicionado com sucesso!")
+                        st.info("Recarregue a página para ver as alterações.")
+                else:
+                    st.warning("Digite um nome válido para o cenário.")
+    # -- (3) Gerenciamento de Campos de Custo --
+    with management_tabs[2]:
+        st.subheader("Gerenciamento de Campos de Custo")
+        if not data:
+            st.warning("Nenhuma filial cadastrada. Adicione uma filial primeiro.")
+        else:
+            filial_for_field = st.selectbox("Selecione a Filial", list(data.keys()), key="gerenciamento_filial")
+            if not data[filial_for_field]:
+                st.info("Nenhum cenário cadastrado para essa filial. Adicione um cenário primeiro.")
+            else:
+                scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="gerenciamento_cenario")
+                scenario_fields = data[filial_for_field][scenario_for_field]
+                st.markdown("### Campos Existentes:")
+                st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
+                if scenario_fields:
+                    for field in list(scenario_fields.keys()):
+                        current = scenario_fields[field]
+                        if isinstance(current, dict):
+                            current_type = current.get("type", "fixed")
+                            current_fixed = float(current.get("value", 0)) if current_type == "fixed" else 0.0
+                            current_rate = float(current.get("rate", 0)) if current_type == "percentage" else 0.0
+                            current_base = current.get("base", "Valor CIF") if current_type == "percentage" else "Valor CIF"
+                            current_rate_occ = bool(current.get("rate_by_occupancy", False))
+                        else:
+                            current_type = "fixed"
+                            current_fixed = float(current)
+                            current_rate = 0.0
+                            current_base = "Valor CIF"
+                            current_rate_occ = False
+                        col1, col2, col3, col4, col5, col6 = st.columns([3, 2.5, 2.5, 2.5, 2, 1.5])
+                        with col1:
+                            st.write(f"**{field}**")
+                        with col2:
+                            novo_tipo = st.selectbox("Tipo",
+                                                     ["fixed", "percentage"],
+                                                     index=0 if current_type=="fixed" else 1,
+                                                     key=f"tipo_{filial_for_field}_{scenario_for_field}_{field}")
+                        novo_config = {}
+                        if novo_tipo == "fixed":
+                            with col3:
+                                novo_valor = st.number_input("Valor Fixo",
+                                                             min_value=0.0,
+                                                             value=current_fixed,
+                                                             key=f"fixo_{filial_for_field}_{scenario_for_field}_{field}")
+                            novo_config = {"type": "fixed", "value": novo_valor}
+                            col4.write("")
+                        else:
+                            with col3:
+                                nova_taxa = st.number_input("Taxa (%)",
+                                                            min_value=0.0,
+                                                            value=current_rate * 100,
+                                                            step=0.1,
+                                                            key=f"taxa_{filial_for_field}_{scenario_for_field}_{field}")
+                            with col4:
+                                nova_base = st.selectbox("Base",
+                                                         ["Valor CIF", "Valor FOB", "Frete Internacional"],
+                                                         index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(current_base),
+                                                         key=f"base_{filial_for_field}_{scenario_for_field}_{field}")
+                            novo_config = {
+                                "type": "percentage",
+                                "rate": nova_taxa / 100.0,
+                                "base": nova_base
+                            }
+                        with col5:
+                            novo_rate_occ = st.checkbox("Ratear?", value=current_rate_occ,
+                                                        key=f"rate_occ_{filial_for_field}_{scenario_for_field}_{field}")
+                            novo_config["rate_by_occupancy"] = novo_rate_occ
+                        if novo_config != current:
+                            scenario_fields[field] = novo_config
+                            save_data(data)
+                            st.success(f"Campo '{field}' atualizado com sucesso!")
+                        with col6:
+                            if st.button("Remover", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
+                                del scenario_fields[field]
+                                save_data(data)
+                                st.success(f"Campo '{field}' removido com sucesso!")
+                                st.stop()
+                else:
+                    st.info("Nenhum campo definido para este cenário.")
+                st.markdown("### Adicionar Novo Campo")
+                new_field = st.text_input("Nome do Novo Campo", key="novo_campo")
+                if new_field:
+                    st.markdown("Defina as opções para o novo campo:")
+                    field_type = st.selectbox("Tipo do Campo", ["fixed", "percentage"], key=f"tipo_novo_{new_field}")
+                    if field_type == "fixed":
+                        field_value = st.number_input("Valor Fixo", min_value=0.0, value=0.0, key=f"valor_novo_{new_field}")
+                    else:
+                        field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
+                        base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
+                    rate_occ_new = st.checkbox("Ratear pela Ocupação do Contêiner?", value=False, key=f"rate_occ_new_{new_field}")
+                    if st.button("Adicionar Campo", key=f"adicionar_{new_field}"):
+                        new_field_stripped = new_field.strip()
+                        if new_field_stripped in scenario_fields:
+                            st.warning("Campo já existe nesse cenário!")
+                        else:
+                            if field_type == "fixed":
+                                scenario_fields[new_field_stripped] = {
+                                    "type": "fixed",
+                                    "value": field_value,
+                                    "rate_by_occupancy": rate_occ_new
+                                }
+                            else:
+                                scenario_fields[new_field_stripped] = {
+                                    "type": "percentage",
+                                    "rate": field_rate / 100.0,
+                                    "base": base_option,
+                                    "rate_by_occupancy": rate_occ_new
+                                }
+                            save_data(data)
+                            st.success("Campo adicionado com sucesso!")
+                            st.info("Recarregue a página para ver as alterações.")
+
 
 # ============================
 # MÓDULO: GERENCIAMENTO DE PRODUTOS
