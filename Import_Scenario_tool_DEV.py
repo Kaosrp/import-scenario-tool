@@ -130,6 +130,7 @@ def calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fractio
         if tax_info:
             base_name = tax_info.get("base", "")
             base_val = base_values.get(base_name, 0)
+            # O cálculo é: valor = base * rate
             taxes[tax] = base_val * tax_info.get("rate", 0)
         else:
             taxes[tax] = 0
@@ -176,7 +177,7 @@ products = load_products()
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
-    # -- (1) Gerenciamento de Filiais --
+    # --- (1) Gerenciamento de Filiais ---
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -206,7 +207,7 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
-    # -- (2) Gerenciamento de Cenários --
+    # --- (2) Gerenciamento de Cenários ---
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -237,6 +238,8 @@ if module_selected == "Gerenciamento":
                     else:
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
+                            "ICMS": 0,
+                            "IPI": 0,
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
@@ -248,7 +251,7 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
-    # -- (3) Gerenciamento de Campos de Custo --
+    # --- (3) Gerenciamento de Campos de Custo ---
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -360,7 +363,6 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-
 # ============================
 # MÓDULO: GERENCIAMENTO DE PRODUTOS
 # ============================
@@ -434,7 +436,7 @@ elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     
-    # Permite selecionar um produto (mesmo para simulação única e multifilial)
+    # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
         product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
         product = products[product_key]
@@ -447,7 +449,6 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-            
             st.subheader("Forma de Inserir o Valor FOB")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
@@ -536,7 +537,21 @@ elif module_selected == "Simulador de Cenários":
                                 field_val *= occupancy_fraction
                             costs[scenario][field] = field_val
                     costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
+                
                 if costs:
+                    # Se produto foi selecionado, calcula os impostos e adiciona ao custo final
+                    if product:
+                        product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                        total_product_taxes = sum(product_taxes.values())
+                        st.write("### Impostos do Produto:")
+                        st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
+                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
+                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
+                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
+                        overall_cost = final_cost + total_product_taxes
+                        st.write(f"### Custo Final com Impostos: R$ {format_brl(overall_cost)}")
+                    else:
+                        overall_cost = final_cost
                     st.write("### Comparação de Cenários para a Filial Selecionada")
                     df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
                     df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
@@ -552,19 +567,7 @@ elif module_selected == "Simulador de Cenários":
                     best_cost = df.iloc[0]['Custo Total']
                     st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
                     
-                    if product:
-                        product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
-                        total_product_taxes = sum(product_taxes.values())
-                        st.write("### Impostos do Produto:")
-                        st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
-                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
-                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
-                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
-                        overall_cost = best_cost + total_product_taxes
-                        st.write(f"### Custo Final com Impostos: R$ {format_brl(overall_cost)}")
-                    else:
-                        overall_cost = best_cost
-                        
+                    # Salva simulação única, incluindo o custo final com impostos
                     if st.button("Salvar Simulação no Histórico"):
                         history = load_history()
                         simulation_record = {
@@ -586,12 +589,12 @@ elif module_selected == "Simulador de Cenários":
                             "best_scenario": best_scenario,
                             "best_cost": best_cost,
                             "results": costs,
-                            "multi_comparison": False
+                            "multi_comparison": False,
+                            "final_cost_com_impostos": overall_cost
                         }
                         if product:
                             simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao","")}
                             simulation_record["product_taxes"] = product_taxes
-                            simulation_record["final_cost_com_impostos"] = overall_cost
                         if quantidade > 0:
                             simulation_record["custo_unitario_melhor"] = best_cost / quantidade
                         history.append(simulation_record)
@@ -699,7 +702,6 @@ elif module_selected == "Simulador de Cenários":
                             multi_costs[(filial, scenario)][field] = field_val
                         multi_costs[(filial, scenario)]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
                 if multi_costs:
-                    # Se um produto foi selecionado, calcula os impostos e acrescenta ao custo de cada cenário
                     if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                         total_product_taxes = sum(product_taxes.values())
@@ -708,7 +710,7 @@ elif module_selected == "Simulador de Cenários":
                         st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
                         st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
                         st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
-                        # Acrescenta aos custos de cada cenário
+                        # Acrescenta os impostos a cada cenário
                         for key in multi_costs:
                             multi_costs[key]["Custo Total Final"] = multi_costs[key]["Custo Total"] + total_product_taxes
                             if "Custo Unitário" in multi_costs[key]:
@@ -737,6 +739,7 @@ elif module_selected == "Simulador de Cenários":
                     best_scenario = best_row["Cenário"]
                     best_cost = best_row["Custo Total Final"]
                     st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo final de **R$ {format_brl(best_cost)}**.")
+                    
                     if st.button("Salvar Comparação no Histórico"):
                         history = load_history()
                         processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
@@ -767,6 +770,7 @@ elif module_selected == "Simulador de Cenários":
                         if product:
                             simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao","")}
                             simulation_record["product_taxes"] = product_taxes
+                        simulation_record["final_cost_com_impostos"] = best_cost
                         history.append(simulation_record)
                         save_history(history)
                         st.success("Comparação Multifilial salva no histórico com sucesso!")
