@@ -330,7 +330,7 @@ if module_selected == "Simulador de Cenários":
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
 
     if sim_mode == "Simulador Único":
-        # ----- SIMULADOR ÚNICO (como antes) -----
+        # ----- SIMULADOR ÚNICO -----
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
@@ -478,7 +478,8 @@ if module_selected == "Simulador de Cenários":
                             "valor_cif": base_values["Valor CIF"],
                             "best_scenario": best_scenario,
                             "best_cost": best_cost,
-                            "results": costs
+                            "results": costs,
+                            "multi_comparison": False  # Indica que é simulação única
                         }
                         if quantidade > 0:
                             simulation_record["custo_unitario_melhor"] = best_cost / quantidade
