@@ -45,8 +45,15 @@ def save_data(data):
 
 def load_history():
     if os.path.exists(history_file):
-        with open(history_file, "r") as f:
-            return json.load(f)
+        try:
+            with open(history_file, "r") as f:
+                conteudo = f.read().strip()
+                if not conteudo:
+                    return []
+                return json.loads(conteudo)
+        except json.JSONDecodeError:
+            # Se ocorrer erro na decodificação do JSON, retorna lista vazia
+            return []
     else:
         return []
 
@@ -315,7 +322,6 @@ if module_selected == "Gerenciamento":
                             save_data(data)
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
-
 
 # ---------------- MÓDULO: SIMULADOR DE CENÁRIOS ----------------
 if module_selected == "Simulador de Cenários":
@@ -630,16 +636,10 @@ if module_selected == "Simulador de Cenários":
                     # Botão para salvar comparação multifilial no histórico
                     if st.button("Salvar Comparação no Histórico"):
                         history = load_history()
-                        # Montamos um único registro contendo todas as infos
-                        # Se quiser, pode pedir um "nome do processo" também aqui
                         processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
-                        # Para que o app não fique bloqueado esperando, pedimos acima ou assumimos algo
-
-                        # Precisamos de st.session_state para armazenar, ou perguntamos acima. 
-                        # Se quiser, adaptamos: se "Salvar" for clicado, iremos gravar com "Comparacao Multifilial" no record.
                         simulation_record = {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "processo_nome": processo_nome_multi,  # ou algo fixo
+                            "processo_nome": processo_nome_multi,
                             "multi_comparison": True,
                             "filiais_multi": filiais_multi,
                             "modo_valor_fob": modo_valor_fob,
@@ -657,10 +657,8 @@ if module_selected == "Simulador de Cenários":
                             "best_filial": best_filial,
                             "best_scenario": best_scenario,
                             "best_cost": best_cost,
-                            "results": {}  # iremos armazenar multi_costs ou df_multi
+                            "results": {}  # armazenaremos os dados de multi_costs
                         }
-
-                        # Para armazenar todos os dados de multi_costs, podemos colocar:
                         simulation_record["results"] = df_multi.to_dict(orient="index")
 
                         history.append(simulation_record)
@@ -685,7 +683,6 @@ elif module_selected == "Histórico de Simulações":
             expander_title = (
                 f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}"
             )
-            # Se for comparacao multifilial, podemos exibir um título diferente
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação Multifilial)"
             else:
@@ -700,7 +697,6 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"**Data/Hora:** {record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
 
                 if record.get("multi_comparison", False):
-                    # Exibimos dados de comparação multifilial
                     st.write("**Filiais Selecionadas:**", record.get("filiais_multi", []))
                     st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
                     st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
@@ -708,15 +704,12 @@ elif module_selected == "Histórico de Simulações":
                     st.write("**Valor CIF:** R$", format_brl(record.get("valor_cif", 0.0)))
                     st.write("**Taxas Frete BRL Rateada:** R$", format_brl(record.get("taxas_frete_brl_rateada", 0.0)))
                     st.write("**Seguro (0,15% Valor FOB):** R$", format_brl(record.get("seguro_0_15_valor_fob", 0.0)))
-                    # results é df_multi em to_dict(orient="index")
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame.from_dict(results_dict, orient="index")
-                        # Format
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
                 else:
-                    # Exibimos dados do simulador único
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
                     st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
                     st.write(f"**Custo Total:** R$ {format_brl(record.get('best_cost', 0.0))}")
@@ -725,8 +718,6 @@ elif module_selected == "Histórico de Simulações":
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
-                # Caso queira exibir mais campos, basta adicionar
-
         if st.button("Limpar Histórico"):
             if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
