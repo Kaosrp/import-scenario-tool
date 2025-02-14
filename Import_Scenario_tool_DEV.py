@@ -237,8 +237,6 @@ if module_selected == "Gerenciamento":
                     else:
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
-                            "ICMS": 0,
-                            "IPI": 0,
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
