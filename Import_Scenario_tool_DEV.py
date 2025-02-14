@@ -678,14 +678,11 @@ elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
     if history:
-        df_history = pd.DataFrame(history)
-        df_history["timestamp"] = pd.to_datetime(df_history["timestamp"], format="%Y-%m-%d %H:%M:%S")
-        df_history = df_history.sort_values("timestamp", ascending=False)
+        # Ordena o histórico por timestamp (mais recente primeiro)
+        sorted_history = sorted(history, key=lambda r: datetime.strptime(r['timestamp'], "%Y-%m-%d %H:%M:%S"), reverse=True)
         st.markdown("### Registros de Simulação")
-        for i, record in df_history.iterrows():
-            expander_title = (
-                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+        for record in sorted_history:
+            expander_title = f"{record['timestamp']}"
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação Multifilial)"
             else:
@@ -694,11 +691,9 @@ elif module_selected == "Histórico de Simulações":
                     expander_title += f" | Melhor: {record['best_scenario']}"
                 if "best_cost" in record:
                     expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
-
             with st.expander(expander_title):
                 st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
-                st.write(f"**Data/Hora:** {record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
-
+                st.write(f"**Data/Hora:** {record['timestamp']}")
                 if record.get("multi_comparison", False):
                     st.write("**Filiais Selecionadas:**", record.get("filiais_multi", []))
                     st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
@@ -721,10 +716,11 @@ elif module_selected == "Histórico de Simulações":
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
-        if st.button("Limpar Histórico"):
-            if st.checkbox("Confirme a limpeza do histórico"):
-                save_history([])
-                st.success("Histórico limpo com sucesso!")
-                st.experimental_rerun()
+                # Botão para excluir este registro individualmente
+                if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
+                    history.remove(record)
+                    save_history(history)
+                    st.success("Registro excluído com sucesso!")
+                    st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
