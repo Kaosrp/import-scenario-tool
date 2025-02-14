@@ -263,7 +263,7 @@ if module_selected == "Gerenciamento":
             else:
                 scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="gerenciamento_cenario")
                 scenario_fields = data[filial_for_field][scenario_for_field]
-                st.markdown("### Campos Existentes:")
+                st.markdown("### Campos Existentes:") 
                 st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
@@ -440,6 +440,7 @@ elif module_selected == "Simulador de Cenários":
     if products:
         product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
         product = products[product_key]
+        st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
@@ -537,71 +538,76 @@ elif module_selected == "Simulador de Cenários":
                                 field_val *= occupancy_fraction
                             costs[scenario][field] = field_val
                     costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
-                
-                if costs:
-                    # Se produto foi selecionado, calcula os impostos e adiciona ao custo final
-                    if product:
-                        product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
-                        total_product_taxes = sum(product_taxes.values())
-                        st.write("### Impostos do Produto:")
-                        st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
-                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
-                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
-                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
-                        overall_cost = final_cost + total_product_taxes
-                        st.write(f"### Custo Final com Impostos: R$ {format_brl(overall_cost)}")
-                    else:
-                        overall_cost = final_cost
+            
+            if costs:
+                if product:
+                    product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                    total_product_taxes = sum(product_taxes.values())
+                    # Acrescenta os impostos a cada cenário
+                    for scenario in costs:
+                        costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
+                        costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
+                        costs[scenario]["Pis"] = product_taxes.get("pis", 0)
+                        costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
+                        costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"] + total_product_taxes
+                    st.write("### Impostos do Produto:")
+                    st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao', 0))}")
+                    st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi', 0))}")
+                    st.write(f"Pis: R$ {format_brl(product_taxes.get('pis', 0))}")
+                    st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins', 0))}")
                     st.write("### Comparação de Cenários para a Filial Selecionada")
-                    df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
-                    df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-                    st.dataframe(df_display)
-                    chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
-                    chart = alt.Chart(chart_data).mark_bar().encode(
-                        x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
-                        y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
-                        tooltip=['Cenário', 'Custo Total']
-                    ).properties(title="Comparativo de Cenários", width=700, height=400)
-                    st.altair_chart(chart, use_container_width=True)
-                    best_scenario = df.index[0]
-                    best_cost = df.iloc[0]['Custo Total']
-                    st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
-                    
-                    # Salva simulação única, incluindo o custo final com impostos
-                    if st.button("Salvar Simulação no Histórico"):
-                        history = load_history()
-                        simulation_record = {
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "processo_nome": processo_nome,
-                            "filial": filial_selected,
-                            "modo_valor_fob": modo_valor_fob,
-                            "valor_unit_fob_usd": valor_unit_fob_usd,
-                            "quantidade": float(quantidade),
-                            "valor_fob_usd": valor_fob_usd,
-                            "frete_internacional_usd": frete_internacional_usd,
-                            "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
-                            "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
-                            "taxas_frete_brl": taxas_frete_brl,
-                            "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
-                            "taxa_cambio": taxa_cambio,
-                            "seguro_0_15_valor_fob": float(0.0015 * (valor_fob_usd * taxa_cambio)),
-                            "valor_cif": base_values["Valor CIF"],
-                            "best_scenario": best_scenario,
-                            "best_cost": best_cost,
-                            "results": costs,
-                            "multi_comparison": False,
-                            "final_cost_com_impostos": overall_cost
-                        }
-                        if product:
-                            simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao","")}
-                            simulation_record["product_taxes"] = product_taxes
-                        if quantidade > 0:
-                            simulation_record["custo_unitario_melhor"] = best_cost / quantidade
-                        history.append(simulation_record)
-                        save_history(history)
-                        st.success("Simulação salva no histórico com sucesso!")
                 else:
-                    st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+                    for scenario in costs:
+                        costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"]
+
+                df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
+                df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                st.dataframe(df_display)
+                chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
+                chart = alt.Chart(chart_data).mark_bar().encode(
+                    x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
+                    y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
+                    tooltip=['Cenário', 'Custo Total']
+                ).properties(title="Comparativo de Cenários", width=700, height=400)
+                st.altair_chart(chart, use_container_width=True)
+                best_scenario = df.index[0]
+                best_cost = df.iloc[0]['Custo Total']
+                st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
+                
+                if st.button("Salvar Simulação no Histórico"):
+                    history = load_history()
+                    simulation_record = {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "processo_nome": processo_nome,
+                        "filial": filial_selected,
+                        "modo_valor_fob": modo_valor_fob,
+                        "valor_unit_fob_usd": valor_unit_fob_usd,
+                        "quantidade": float(quantidade),
+                        "valor_fob_usd": valor_fob_usd,
+                        "frete_internacional_usd": frete_internacional_usd,
+                        "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
+                        "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
+                        "taxas_frete_brl": taxas_frete_brl,
+                        "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
+                        "taxa_cambio": taxa_cambio,
+                        "seguro_0_15_valor_fob": float(seguro),
+                        "valor_cif": base_values["Valor CIF"],
+                        "best_scenario": best_scenario,
+                        "best_cost": best_cost,
+                        "results": costs,
+                        "multi_comparison": False,
+                        "final_cost_com_impostos": best_cost
+                    }
+                    if product:
+                        simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao", "")}
+                        simulation_record["product_taxes"] = product_taxes
+                    if quantidade > 0:
+                        simulation_record["custo_unitario_melhor"] = best_cost / quantidade
+                    history.append(simulation_record)
+                    save_history(history)
+                    st.success("Simulação salva no histórico com sucesso!")
+            else:
+                st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
     
     else:
         # MODO: COMPARAÇÃO MULTIFILIAL
@@ -712,6 +718,10 @@ elif module_selected == "Simulador de Cenários":
                         st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
                         # Acrescenta os impostos a cada cenário
                         for key in multi_costs:
+                            multi_costs[key]["II"] = product_taxes.get("imposto_importacao", 0)
+                            multi_costs[key]["IPI"] = product_taxes.get("ipi", 0)
+                            multi_costs[key]["Pis"] = product_taxes.get("pis", 0)
+                            multi_costs[key]["Cofins"] = product_taxes.get("cofins", 0)
                             multi_costs[key]["Custo Total Final"] = multi_costs[key]["Custo Total"] + total_product_taxes
                             if "Custo Unitário" in multi_costs[key]:
                                 multi_costs[key]["Custo Unitário Final"] = multi_costs[key]["Custo Unitário"] + (total_product_taxes/quantidade if quantidade > 0 else 0)
@@ -721,8 +731,7 @@ elif module_selected == "Simulador de Cenários":
                             if "Custo Unitário" in multi_costs[key]:
                                 multi_costs[key]["Custo Unitário Final"] = multi_costs[key]["Custo Unitário"]
                     
-                    df_multi = pd.DataFrame(multi_costs).T
-                    df_multi = df_multi.sort_values(by="Custo Total Final")
+                    df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo Total Final")
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.write("### Comparação Global (Multifilial)")
                     st.dataframe(df_display)
@@ -758,7 +767,7 @@ elif module_selected == "Simulador de Cenários":
                             "taxas_frete_brl": taxas_frete_brl,
                             "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
                             "taxa_cambio": taxa_cambio,
-                            "seguro_0_15_valor_fob": float(0.0015 * (valor_fob_usd * taxa_cambio)),
+                            "seguro_0_15_valor_fob": float(seguro),
                             "valor_cif": base_values["Valor CIF"],
                             "best_filial": best_filial,
                             "best_scenario": best_scenario,
