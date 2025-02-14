@@ -558,7 +558,7 @@ elif module_selected == "Simulador de Cenários":
                     st.warning("Nenhuma configuração encontrada para a filial selecionada. "
                                "Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
 
-    else:
+   
         # ----- COMPARAÇÃO MULTIFILIAL -----
         st.subheader("Comparação Multifilial")
         if not data:
