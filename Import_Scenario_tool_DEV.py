@@ -94,6 +94,50 @@ def generate_csv(sim_record):
     csv_data = df_formatted.to_csv(index=True, sep=";")
     return csv_data.encode('utf-8')
 
+
+# ------------------ Função para calcular os impostos de Produto ------------------
+def calcular_impostos_produto(produto_info, valor_cif):
+    """
+    produto_info: dict com as alíquotas do produto, ex.:
+      {
+        "descricao": "...",
+        "ii": 10.0,
+        "ipi": 15.0,
+        "pis": 2.1,
+        "cofins": 9.65
+      }
+    valor_cif: valor CIF (com seguro) em BRL.
+
+    Bases simples (pode adaptar se sua legislação for diferente):
+    - II = aliq_ii% * CIF
+    - IPI = aliq_ipi% * (CIF + II)
+    - PIS = aliq_pis% * (CIF + II + IPI)
+    - COFINS = aliq_cofins% * (CIF + II + IPI)
+    Retorna dict com os valores de cada imposto e a soma total.
+    """
+    ii_aliq = produto_info.get("ii", 0.0) / 100.0
+    ipi_aliq = produto_info.get("ipi", 0.0) / 100.0
+    pis_aliq = produto_info.get("pis", 0.0) / 100.0
+    cofins_aliq = produto_info.get("cofins", 0.0) / 100.0
+
+    valor_ii = valor_cif * ii_aliq
+    base_ipi = valor_cif + valor_ii
+    valor_ipi = base_ipi * ipi_aliq
+
+    base_pis_cofins = valor_cif + valor_ii + valor_ipi
+    valor_pis = base_pis_cofins * pis_aliq
+    valor_cofins = base_pis_cofins * cofins_aliq
+
+    total_impostos = valor_ii + valor_ipi + valor_pis + valor_cofins
+    return {
+        "II": valor_ii,
+        "IPI": valor_ipi,
+        "PIS": valor_pis,
+        "COFINS": valor_cofins,
+        "Total_Impostos": total_impostos
+    }
+
+# -------------------- Layout Principal --------------------
 st.title("Ferramenta de Análise de Cenários de Importação")
 
 if 'module' not in st.session_state:
@@ -315,6 +359,64 @@ if module_selected == "Gerenciamento":
                             save_data(data)
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
+
+
+ # (4) Gerenciamento de Produtos (NCM)
+    with management_tabs[3]:
+        st.subheader("Gerenciamento de Produtos (NCM)")
+
+        # Se não existir data["Produtos"], criamos
+        if "Produtos" not in data:
+            data["Produtos"] = {}
+            save_data(data)
+
+        produtos = data["Produtos"]  # dict de { ncm: {...} }
+
+        # Listar produtos existentes
+        st.markdown("### Produtos Cadastrados:")
+        if produtos:
+            for ncm_code in list(produtos.keys()):
+                prod_info = produtos[ncm_code]
+                col1, col2, col3 = st.columns([3, 3, 1])
+                with col1:
+                    st.write(f"NCM: **{ncm_code}** - {prod_info.get('descricao', '')}")
+                with col2:
+                    st.write(f"II: {prod_info.get('ii', 0)}% | IPI: {prod_info.get('ipi',0)}% "
+                             f"| PIS: {prod_info.get('pis',0)}% | COFINS: {prod_info.get('cofins',0)}%")
+                with col3:
+                    if st.button("Excluir", key=f"delete_prod_{ncm_code}"):
+                        del produtos[ncm_code]
+                        save_data(data)
+                        st.success(f"Produto NCM {ncm_code} excluído.")
+                        st.experimental_rerun()
+        else:
+            st.info("Nenhum produto cadastrado.")
+
+        st.markdown("### Cadastrar/Editar Produto")
+        with st.form("form_produto"):
+            ncm_input = st.text_input("NCM do Produto", "")
+            desc_input = st.text_input("Descrição do Produto", "")
+            ii_input = st.number_input("Alíquota II (%)", min_value=0.0, value=0.0, step=0.1)
+            ipi_input = st.number_input("Alíquota IPI (%)", min_value=0.0, value=0.0, step=0.1)
+            pis_input = st.number_input("Alíquota PIS (%)", min_value=0.0, value=0.0, step=0.1)
+            cofins_input = st.number_input("Alíquota COFINS (%)", min_value=0.0, value=0.0, step=0.1)
+            submitted = st.form_submit_button("Salvar Produto")
+
+            if submitted:
+                ncm_stripped = ncm_input.strip()
+                if ncm_stripped:
+                    data["Produtos"][ncm_stripped] = {
+                        "descricao": desc_input.strip(),
+                        "ii": ii_input,
+                        "ipi": ipi_input,
+                        "pis": pis_input,
+                        "cofins": cofins_input
+                    }
+                    save_data(data)
+                    st.success(f"Produto NCM {ncm_stripped} salvo/atualizado com sucesso!")
+                else:
+                    st.warning("Digite um código NCM válido.")
+
 
 
 # ---------------- MÓDULO: SIMULADOR DE CENÁRIOS ----------------
