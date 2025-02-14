@@ -57,7 +57,7 @@ def save_history(history):
 def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction):
     """
     config: dicionário de campos do cenário.
-    base_values: ex.: {"Valor CIF": valor_cif_final, "Valor FOB": valor_fob, "Frete Internacional": frete_internacional_rateado}
+    base_values: ex.: {"Valor CIF": valor_cif_final, "Valor FOB": valor_fob, "Frete Internacional": frete_int_rateado}
     taxa_cambio: taxa de câmbio (USD -> BRL).
     occupancy_fraction: fração de ocupação do contêiner (ex.: 0.5 para 50%).
     """
@@ -85,7 +85,6 @@ def calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fr
         
         extra += cost_value
     
-    # base_values["Valor CIF"] é o valor CIF final (com seguro), sem taxas_frete_brl
     return base_values.get("Valor CIF", 0) + extra
 
 def generate_csv(sim_record):
@@ -381,11 +380,10 @@ elif module_selected == "Configuração":
 if module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
 
-    # Radio para escolher entre "Simulador Único" e "Comparação Multifilial"
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
 
     if sim_mode == "Simulador Único":
-        # ---- Simulador Único (o mesmo que você já tinha) ----
+        # ----- SIMULADOR ÚNICO (como antes) -----
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
@@ -506,7 +504,7 @@ if module_selected == "Simulador de Cenários":
                         x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
                         y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
                         tooltip=['Cenário', 'Custo Total']
-                    ).properties(title="Comparativo de Custos por Cenário", width=700, height=400)
+                    ).properties(title="Comparativo de Cenários", width=700, height=400)
                     st.altair_chart(chart, use_container_width=True)
 
                     best_scenario = df.index[0]
@@ -542,15 +540,15 @@ if module_selected == "Simulador de Cenários":
                         save_history(history)
                         st.success("Simulação salva no histórico com sucesso!")
                 else:
-                    st.warning("Nenhuma configuração encontrada para a filial selecionada. Por favor, configure a base de custos na aba Configuração.")
+                    st.warning("Nenhuma configuração encontrada para a filial selecionada. "
+                               "Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
 
     else:
-        # ---- Comparação Multifilial ----
+        # ----- COMPARAÇÃO MULTIFILIAL -----
         st.subheader("Comparação Multifilial")
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
-            # Seleciona múltiplas filiais
             filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()))
             if filiais_multi:
                 st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
@@ -599,24 +597,19 @@ if module_selected == "Simulador de Cenários":
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
                 st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
 
-                # Monta base_values comum
                 base_values = {
                     "Valor CIF": valor_cif,
                     "Valor FOB": valor_fob_usd,
                     "Frete Internacional": frete_internacional_usd_rateado
                 }
 
-                # Dicionário global para armazenar custos
-                multi_costs = {}  # ex.: { (filial, scenario): { "Custo Total": X, ... } }
-
-                # Itera por cada filial selecionada
+                multi_costs = {}
                 for filial in filiais_multi:
                     if filial not in data:
                         continue
                     for scenario, config in data[filial].items():
                         if scenario.lower() == "teste":
                             continue
-                        # Checa se tem valor > 0
                         tem_valor = False
                         for field, conf in config.items():
                             if isinstance(conf, dict):
@@ -638,7 +631,6 @@ if module_selected == "Simulador de Cenários":
                         scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                         final_cost = scenario_cost + taxas_frete_brl_rateada
 
-                        # Chave = (filial, scenario)
                         multi_costs[(filial, scenario)] = {
                             "Filial": filial,
                             "Cenário": scenario,
@@ -647,7 +639,6 @@ if module_selected == "Simulador de Cenários":
                         if quantidade > 0:
                             multi_costs[(filial, scenario)]["Custo Unitário"] = final_cost / quantidade
 
-                        # Detalha campos
                         for field, conf in config.items():
                             if isinstance(conf, dict):
                                 field_type = conf.get("type", "fixed")
@@ -672,17 +663,13 @@ if module_selected == "Simulador de Cenários":
                         multi_costs[(filial, scenario)]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
 
                 if multi_costs:
-                    # Converte multi_costs em DataFrame
                     df_multi = pd.DataFrame(multi_costs).T
-                    # Ordena por "Custo Total"
                     df_multi = df_multi.sort_values(by="Custo Total")
 
-                    # Formata para exibição
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.write("### Comparação Global (Multifilial)")
                     st.dataframe(df_display)
 
-                    # Gráfico: Eixo X = Custo Total, Eixo Y = Filial + Cenário
                     chart_data = df_multi.reset_index()
                     chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
                     chart = alt.Chart(chart_data).mark_bar().encode(
@@ -698,10 +685,49 @@ if module_selected == "Simulador de Cenários":
                     best_cost = best_row["Custo Total"]
                     st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** "
                              f"com custo total de **R$ {format_brl(best_cost)}**.")
+
+                    # Botão para salvar comparação multifilial no histórico
+                    if st.button("Salvar Comparação no Histórico"):
+                        history = load_history()
+                        # Montamos um único registro contendo todas as infos
+                        # Se quiser, pode pedir um "nome do processo" também aqui
+                        processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
+                        # Para que o app não fique bloqueado esperando, pedimos acima ou assumimos algo
+
+                        # Precisamos de st.session_state para armazenar, ou perguntamos acima. 
+                        # Se quiser, adaptamos: se "Salvar" for clicado, iremos gravar com "Comparacao Multifilial" no record.
+                        simulation_record = {
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "processo_nome": processo_nome_multi,  # ou algo fixo
+                            "multi_comparison": True,
+                            "filiais_multi": filiais_multi,
+                            "modo_valor_fob": modo_valor_fob,
+                            "valor_unit_fob_usd": valor_unit_fob_usd,
+                            "quantidade": float(quantidade),
+                            "valor_fob_usd": valor_fob_usd,
+                            "frete_internacional_usd": frete_internacional_usd,
+                            "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
+                            "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
+                            "taxas_frete_brl": taxas_frete_brl,
+                            "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
+                            "taxa_cambio": taxa_cambio,
+                            "seguro_0_15_valor_fob": float(0.0015 * (valor_fob_usd * taxa_cambio)),
+                            "valor_cif": valor_cif,
+                            "best_filial": best_filial,
+                            "best_scenario": best_scenario,
+                            "best_cost": best_cost,
+                            "results": {}  # iremos armazenar multi_costs ou df_multi
+                        }
+
+                        # Para armazenar todos os dados de multi_costs, podemos colocar:
+                        simulation_record["results"] = df_multi.to_dict(orient="index")
+
+                        history.append(simulation_record)
+                        save_history(history)
+                        st.success("Comparação Multifilial salva no histórico com sucesso!")
                 else:
                     st.warning("Nenhuma configuração encontrada para as filiais selecionadas. "
                                "Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-
             else:
                 st.info("Selecione pelo menos uma filial para comparar.")
 
@@ -716,39 +742,50 @@ elif module_selected == "Histórico de Simulações":
         st.markdown("### Registros de Simulação")
         for i, record in df_history.iterrows():
             expander_title = (
-                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Filial: {record['filial']} | "
-                f"Processo: {record.get('processo_nome', 'N/A')} | "
-                f"Melhor: {record['best_scenario']} | Custo: R$ {format_brl(record['best_cost'])}"
+                f"{record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}"
             )
+            # Se for comparacao multifilial, podemos exibir um título diferente
+            if record.get("multi_comparison", False):
+                expander_title += " (Comparação Multifilial)"
+            else:
+                expander_title += f" | Filial: {record.get('filial', 'N/A')}"
+                if "best_scenario" in record:
+                    expander_title += f" | Melhor: {record['best_scenario']}"
+                if "best_cost" in record:
+                    expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
+
             with st.expander(expander_title):
-                st.markdown("**Parâmetros de Entrada:**")
-                st.write(f"- **Modo Valor FOB:** {record.get('modo_valor_fob', 'Valor Total')}")
-                st.write(f"- **Valor Unitário FOB (USD/unidade):** {format_brl(record.get('valor_unit_fob_usd', 0.0))}")
-                st.write(f"- **Quantidade:** {format_brl(record.get('quantidade', 0.0))}")
-                st.write(f"- **Valor FOB (USD):** {format_brl(record.get('valor_fob_usd', 0.0))}")
-                st.write(f"- **Frete Internacional (USD):** {format_brl(record.get('frete_internacional_usd', 0.0))}")
-                st.write(f"- **Percentual de Ocupação do Contêiner:** {format_brl(record.get('percentual_ocupacao_conteiner', 100.0))}%")
-                st.write(f"- **Frete Internacional Rateado (USD):** {format_brl(record.get('frete_internacional_usd_rateado', 0.0))}")
-                st.write(f"- **Taxas do Frete (BRL):** {format_brl(record.get('taxas_frete_brl', 0.0))}")
-                st.write(f"- **Taxas do Frete (BRL) Rateadas:** {format_brl(record.get('taxas_frete_brl_rateada', 0.0))}")
-                st.write(f"- **Taxa de Câmbio:** {format_brl(record.get('taxa_cambio', 0.0))}")
-                st.write(f"- **Seguro (0,15% do Valor FOB):** R$ {format_brl(record.get('seguro_0_15_valor_fob', 0.0))}")
-                st.write(f"- **Valor CIF Calculado (com Seguro):** {format_brl(record.get('valor_cif', 0.0))}")
-                
-                st.markdown("**Resultados da Simulação:**")
-                st.write(f"- **Melhor Cenário:** {record['best_scenario']}")
-                st.write(f"- **Custo Total:** R$ {format_brl(record['best_cost'])}")
-                if 'custo_unitario_melhor' in record:
-                    st.write(f"- **Custo Unitário (Melhor Cenário):** R$ {format_brl(record['custo_unitario_melhor'])}")
-                
-                st.markdown("**Resultados Completos:**")
-                results_df = pd.DataFrame(record["results"]).T
-                results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-                st.dataframe(results_df_display)
-                
-                csv_bytes = generate_csv(record)
-                file_name = f"{record.get('processo_nome', 'Simulacao')}_{record['timestamp'].strftime('%Y%m%d_%H%M%S')}.csv"
-                st.download_button("Exportar Resultados para CSV", data=csv_bytes, file_name=file_name, mime="text/csv")
+                st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
+                st.write(f"**Data/Hora:** {record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
+
+                if record.get("multi_comparison", False):
+                    # Exibimos dados de comparação multifilial
+                    st.write("**Filiais Selecionadas:**", record.get("filiais_multi", []))
+                    st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
+                    st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
+                    st.write("**Melhor Custo:** R$", format_brl(record.get("best_cost", 0.0)))
+                    st.write("**Valor CIF:** R$", format_brl(record.get("valor_cif", 0.0)))
+                    st.write("**Taxas Frete BRL Rateada:** R$", format_brl(record.get("taxas_frete_brl_rateada", 0.0)))
+                    st.write("**Seguro (0,15% Valor FOB):** R$", format_brl(record.get("seguro_0_15_valor_fob", 0.0)))
+                    # results é df_multi em to_dict(orient="index")
+                    results_dict = record.get("results", {})
+                    if results_dict:
+                        results_df = pd.DataFrame.from_dict(results_dict, orient="index")
+                        # Format
+                        results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                        st.dataframe(results_df_display)
+                else:
+                    # Exibimos dados do simulador único
+                    st.write(f"**Filial:** {record.get('filial', 'N/A')}")
+                    st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
+                    st.write(f"**Custo Total:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    results_dict = record.get("results", {})
+                    if results_dict:
+                        results_df = pd.DataFrame(results_dict).T
+                        results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                        st.dataframe(results_df_display)
+                # Caso queira exibir mais campos, basta adicionar
+
         if st.button("Limpar Histórico"):
             if st.checkbox("Confirme a limpeza do histórico"):
                 save_history([])
