@@ -104,8 +104,6 @@ if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Gerenciamento"):
     st.session_state.module = "Gerenciamento"
-if st.sidebar.button("Configuração"):
-    st.session_state.module = "Configuração"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
@@ -318,63 +316,6 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
 
-# ---------------- MÓDULO: CONFIGURAÇÃO ----------------
-elif module_selected == "Configuração":
-    st.header("Configuração de Base de Custos por Filial")
-    if not data:
-        st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
-    else:
-        for filial in data.keys():
-            st.subheader(f"Configuração de Custos - Filial: {filial}")
-            if not data[filial]:
-                st.info("Nenhum cenário cadastrado para essa filial. Adicione na aba Gerenciamento.")
-            else:
-                scenario_names = list(data[filial].keys())
-                scenario_tabs = st.tabs(scenario_names)
-                for scenario, scenario_tab in zip(scenario_names, scenario_tabs):
-                    with scenario_tab:
-                        st.subheader(f"{scenario} - {filial}")
-                        for field, conf in data[filial][scenario].items():
-                            if isinstance(conf, dict):
-                                field_type = conf.get("type", "fixed")
-                                if field_type == "fixed":
-                                    unique_key = f"{filial}_{scenario}_{field}"
-                                    novo_valor = st.number_input(f"{field} (Fixo)",
-                                                                 min_value=0.0,
-                                                                 value=float(conf.get("value", 0)),
-                                                                 key=unique_key)
-                                    if novo_valor != conf.get("value", 0):
-                                        data[filial][scenario][field]["value"] = novo_valor
-                                        save_data(data)
-                                    rate_occ = bool(conf.get("rate_by_occupancy", False))
-                                    new_rate_occ = st.checkbox(f"Ratear '{field}' pela ocupação?",
-                                                               value=rate_occ,
-                                                               key=f"rate_occ_conf_{filial}_{scenario}_{field}")
-                                    if new_rate_occ != rate_occ:
-                                        data[filial][scenario][field]["rate_by_occupancy"] = new_rate_occ
-                                        save_data(data)
-                                elif field_type == "percentage":
-                                    st.write(f"{field} (Percentual: {conf.get('rate',0)*100:.1f}% sobre {conf.get('base','')})")
-                                    rate_occ = bool(conf.get("rate_by_occupancy", False))
-                                    new_rate_occ = st.checkbox(f"Ratear '{field}' pela ocupação?",
-                                                               value=rate_occ,
-                                                               key=f"rate_occ_conf_{filial}_{scenario}_{field}")
-                                    if new_rate_occ != rate_occ:
-                                        data[filial][scenario][field]["rate_by_occupancy"] = new_rate_occ
-                                        save_data(data)
-                                else:
-                                    st.write(f"{field} (Tipo desconhecido)")
-                            else:
-                                # Valor simples
-                                unique_key = f"{filial}_{scenario}_{field}"
-                                novo_valor = st.number_input(f"{field}",
-                                                             min_value=0.0,
-                                                             value=float(conf),
-                                                             key=unique_key)
-                                if novo_valor != conf:
-                                    data[filial][scenario][field] = novo_valor
-                                    save_data(data)
-        st.success("Configuração atualizada e salva automaticamente!")
 
 # ---------------- MÓDULO: SIMULADOR DE CENÁRIOS ----------------
 if module_selected == "Simulador de Cenários":
