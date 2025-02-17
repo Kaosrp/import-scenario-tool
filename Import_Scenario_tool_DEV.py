@@ -864,7 +864,7 @@ elif module_selected == "Histórico de Simulações":
                     history.remove(record)
                     save_history(history)
                     st.success("Registro excluído com sucesso!")
-                    st.experimental_rerun()
+                    #st.experimental_rerun()
     else:
         st.info("Nenhuma simulação registrada no histórico.")
 
