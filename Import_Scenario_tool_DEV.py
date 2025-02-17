@@ -865,6 +865,18 @@ elif module_selected == "Histórico de Simulações":
                     save_history(history)
                     st.success("Registro excluído com sucesso!")
                     #st.experimental_rerun()
+          # Botão para excluir este registro
+                if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
+                    # 2. Remove do session_state
+                    sorted_history.remove(record)  
+                    # Se preferir remover direto de st.session_state.history, cuidado para não quebrar o "for"
+                    st.session_state.history = sorted_history
+                    save_history(st.session_state.history)
+                    st.success("Registro excluído com sucesso!")
+                    # Sem st.experimental_rerun()
+
+
+    
     else:
         st.info("Nenhuma simulação registrada no histórico.")
 
