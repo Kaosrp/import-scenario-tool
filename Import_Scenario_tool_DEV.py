@@ -802,15 +802,12 @@ elif module_selected == "Histórico de Simulações":
 
                 if "best_scenario" in record:
                     expander_title += f" | Melhor: {record['best_scenario']}"
-                
                 if "best_cost" in record:
                     expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
-                
                 if record.get("multi_comparison", False):
                     expander_title += " (Comparação Multifilial)"
                 else:
-                    expander_title += f" | Filial: {record.get('filial', 'N/A')}"
-                            
+                    expander_title += f" | Filial: {record.get('filial', 'N/A')}"    
             with st.expander(expander_title):
                 st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
                 st.write(f"**Data/Hora:** {record['timestamp']}")
