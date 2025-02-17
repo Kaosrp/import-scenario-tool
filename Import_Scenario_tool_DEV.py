@@ -795,19 +795,23 @@ elif module_selected == "Histórico de Simulações":
     st.header("Histórico de Simulações")
     history = load_history()
     if history:
+        # Ordena a lista de histórico da mais recente para a mais antiga
         sorted_history = sorted(
             history,
             key=lambda r: datetime.strptime(r["timestamp"], "%Y-%m-%d %H:%M:%S"),
             reverse=True
         )
         st.markdown("### Registros de Simulação")
+        
         for record in sorted_history:
-            # Cria o título do expander com as informações desejadas
+            # Monta o título do expander
             expander_title = f"{record['timestamp']}"
             if "best_scenario" in record:
                 expander_title += f" | Melhor: {record['best_scenario']}"
             if "best_cost" in record:
                 expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
+            
+            # Indica se é uma comparação multifilial
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação Multifilial)"
             else:
@@ -816,14 +820,22 @@ elif module_selected == "Histórico de Simulações":
             with st.expander(expander_title):
                 st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
                 st.write(f"**Data/Hora:** {record['timestamp']}")
+                
+                # Se for comparação multifilial, exibe as informações específicas
                 if record.get("multi_comparison", False):
-                    st.write("**Filiais Selecionadas:**", record.get("filiais_multi", []))
+                    filiais = record.get("filiais_multi", [])
+                    if filiais:
+                        # Exibe as filiais separadas por vírgula
+                        st.write("**Filiais Selecionadas:** " + ", ".join(filiais))
+                    
                     st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
                     st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
                     st.write("**Melhor Custo:** R$", format_brl(record.get("best_cost", 0.0)))
                     st.write("**Valor CIF:** R$", format_brl(record.get("valor_cif", 0.0)))
                     st.write("**Taxas Frete BRL Rateada:** R$", format_brl(record.get("taxas_frete_brl_rateada", 0.0)))
                     st.write("**Seguro (0,15% Valor FOB):** R$", format_brl(record.get("seguro_0_15_valor_fob", 0.0)))
+                    
+                    # Exibe o DataFrame com os resultados, caso existam
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame.from_dict(results_dict, orient="index")
@@ -831,10 +843,14 @@ elif module_selected == "Histórico de Simulações":
                             lambda x: format_brl(x) if isinstance(x, (int, float)) else x
                         )
                         st.dataframe(results_df_display)
+                
+                # Se for simulação única, exibe as informações específicas
                 else:
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
                     st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
                     st.write(f"**Custo Total:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    
+                    # Exibe o DataFrame com os resultados, caso existam
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame(results_dict).T
@@ -842,6 +858,8 @@ elif module_selected == "Histórico de Simulações":
                             lambda x: format_brl(x) if isinstance(x, (int, float)) else x
                         )
                         st.dataframe(results_df_display)
+                
+                # Botão para excluir o registro do histórico
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
                     history.remove(record)
                     save_history(history)
