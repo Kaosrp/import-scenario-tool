@@ -873,7 +873,7 @@ elif module_selected == "Histórico de Simulações":
                     st.session_state.history = sorted_history
                     save_history(st.session_state.history)
                     st.success("Registro excluído com sucesso!")
-                    # Sem st.experimental_rerun()
+                    st.experimental_rerun()
 
 
     
