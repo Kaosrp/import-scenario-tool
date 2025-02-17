@@ -280,7 +280,7 @@ if module_selected == "Gerenciamento":
                             current_rate = 0.0
                             current_base = "Valor CIF"
                             current_rate_occ = False
-                        col1, col2, col3, col4, col5, col6 = st.columns([3, 2.5, 2.5, 2.5, 2, 1.5])
+                        col1, col2, col3, col4, col5, col6 = st.columns([3, 2.5, 2.5, 2.5, 2, 1.8])
                         with col1:
                             st.write(f"**{field}**")
                         with col2:
