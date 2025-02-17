@@ -800,7 +800,7 @@ elif module_selected == "Histórico de Simulações":
         for record in sorted_history:
             expander_title = f"{record['timestamp']}"
             if record.get("multi_comparison", False):
-                expander_title += " (Comparação Multifilial)"
+                expander_title += " | Filial: {record.get('filial', 'N/A')} (Comparação Multifilial)"
             else:
                 expander_title += f" | Filial: {record.get('filial', 'N/A')}"
                 if "best_scenario" in record:
