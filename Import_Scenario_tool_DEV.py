@@ -860,10 +860,10 @@ elif module_selected == "Histórico de Simulações":
                         st.dataframe(results_df_display)
                 
                 # Botão para excluir o registro do histórico
-                if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                    history.remove(record)
-                    save_history(history)
-                    st.success("Registro excluído com sucesso!")
+                #if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
+                    #history.remove(record)
+                    #save_history(history)
+                    #st.success("Registro excluído com sucesso!")
                     #st.experimental_rerun()
           # Botão para excluir este registro
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
