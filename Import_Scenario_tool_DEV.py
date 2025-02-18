@@ -553,9 +553,10 @@ elif module_selected == "Simulador de Cenários":
 
                     # Cria o dicionário com os campos na ordem desejada:
                     costs[scenario] = {
+                        "Custo Total": final_cost
                         "Valor FOB": valor_fob_usd,
                         "Valor CIF com Seguro": valor_cif,
-                        "Custo Total": final_cost
+                       
                     }
                     if quantidade > 0:
                         costs[scenario]["Custo Unitário"] = final_cost / quantidade
