@@ -841,14 +841,14 @@ elif module_selected == "Histórico de Simulações":
         st.markdown("### Registros de Simulação")
         
         for record in sorted_history:
-            # Monta o título do expander
+            # Monta o título do expander usando os campos atualizados
             expander_title = f"{record['timestamp']}"
             if "best_scenario" in record:
                 expander_title += f" | Melhor: {record['best_scenario']}"
             if "best_cost" in record:
-                expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
+                expander_title += f" | Custo Final: R$ {format_brl(record['best_cost'])}"
             
-            # Indica se é uma comparação multifilial
+            # Indica se é uma comparação multifilial ou simulação única
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação Multifilial)"
             else:
@@ -858,21 +858,17 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
                 st.write(f"**Data/Hora:** {record['timestamp']}")
                 
-                # Se for comparação multifilial, exibe as informações específicas
+                # Se for comparação multifilial
                 if record.get("multi_comparison", False):
                     filiais = record.get("filiais_multi", [])
                     if filiais:
-                        # Exibe as filiais separadas por vírgula
                         st.write("**Filiais Selecionadas:** " + ", ".join(filiais))
-                    
                     st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
                     st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
-                    st.write("**Melhor Custo:** R$", format_brl(record.get("best_cost", 0.0)))
-                    st.write("**Valor CIF:** R$", format_brl(record.get("valor_cif", 0.0)))
-                    st.write("**Taxas Frete BRL Rateada:** R$", format_brl(record.get("taxas_frete_brl_rateada", 0.0)))
-                    st.write("**Seguro (0,15% Valor FOB):** R$", format_brl(record.get("seguro_0_15_valor_fob", 0.0)))
+                    st.write("**Custo Final:** R$", format_brl(record.get("best_cost", 0.0)))
+                    st.write("**Valor CIF com Seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
                     
-                    # Exibe o DataFrame com os resultados, caso existam
+                    # Exibe o DataFrame com os resultados atualizados
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame.from_dict(results_dict, orient="index")
@@ -881,38 +877,28 @@ elif module_selected == "Histórico de Simulações":
                         )
                         st.dataframe(results_df_display)
                 
-                # Se for simulação única, exibe as informações específicas
+                # Se for simulação única
                 else:
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
                     st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
-                    st.write(f"**Custo Total:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    st.write(f"**Custo Final:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
+                    st.write("**Valor CIF com Seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
                     
-                    # Exibe o DataFrame com os resultados, caso existam
                     results_dict = record.get("results", {})
                     if results_dict:
+                        # Note que para simulação única, os resultados foram armazenados com as chaves definidas
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(
                             lambda x: format_brl(x) if isinstance(x, (int, float)) else x
                         )
                         st.dataframe(results_df_display)
                 
-                # Botão para excluir o registro do histórico
-                #if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                    #history.remove(record)
-                    #save_history(history)
-                    #st.success("Registro excluído com sucesso!")
-                    #st.experimental_rerun()
-          # Botão para excluir este registro
+                # Botão para excluir este registro
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                    # 2. Remove do session_state
                     sorted_history.remove(record)  
-                    # Se preferir remover direto de st.session_state.history, cuidado para não quebrar o "for"
                     st.session_state.history = sorted_history
                     save_history(st.session_state.history)
                     st.success("Registro excluído com sucesso!")
-                    #st.experimental_rerun()
-
-
-    
     else:
         st.info("Nenhuma simulação registrada no histórico.")
