@@ -474,9 +474,9 @@ elif module_selected == "Simulador de Cenários":
     #else:
      #   st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
       #  product = None
-
+    
+# Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
     if products:
-    # Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
     options = []
     mapping = {}
     for ncm, prod in products.items():
