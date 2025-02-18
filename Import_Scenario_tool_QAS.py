@@ -31,7 +31,7 @@ st.markdown(
         transition: background-color 0.3s, transform 0.2s;
     }
     div.stButton > button:hover {
-        background-color: #FF416C;
+        background-color: #2E2E2E;
         transform: scale(1.05);
     }
 
