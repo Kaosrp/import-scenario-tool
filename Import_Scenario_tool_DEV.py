@@ -509,10 +509,10 @@ elif module_selected == "Simulador de Cenários":
             seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
             valor_cif = valor_cif_base + seguro
             
-            st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
-            st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
-            st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-            st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+            #st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
+            #st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
+            #st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
+            #st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
             
             processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             base_values = {
