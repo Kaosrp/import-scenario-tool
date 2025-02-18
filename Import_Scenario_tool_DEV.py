@@ -481,7 +481,7 @@ elif module_selected == "Simulador de Cenários":
         product = products[product_key]
 
         # Exibe a descrição separadamente (opcional)
-        st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
+        #st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
