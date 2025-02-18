@@ -6,6 +6,52 @@ import altair as alt
 from datetime import datetime
 import io
 
+
+# ============================
+# Juicy CSS Styling
+# ============================
+st.markdown(
+    """
+    
+    }
+
+    /* Sidebar styling with its own gradient */
+    .css-1d391kg, .css-1d391kg * {
+        background: linear-gradient(135deg, #00C9FF, #92FE9D);
+        color: #fff;
+    }
+
+    /* Custom button styling with hover animation */
+    div.stButton > button {
+        background-color: #FF4B2B;
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 5px;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+    div.stButton > button:hover {
+        background-color: #FF416C;
+        transform: scale(1.05);
+    }
+
+    /* Enable horizontal scrolling on tabs */
+    [role="tablist"] {
+      overflow-x: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Styling for expander content */
+    div.st-expanderContent {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ============================
 # Funções de Formatação
 # ============================
