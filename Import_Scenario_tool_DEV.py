@@ -771,14 +771,14 @@ elif module_selected == "Simulador de Cenários":
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.write("### Comparação Global (Multifilial)")
                     st.dataframe(df_display)
-                    chart_data = df_multi.reset_index()
-                    chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
-                    chart = alt.Chart(chart_data).mark_bar().encode(
-                        x=alt.X('Custo Total Final:Q', title='Custo Total Final (R$)'),
-                        y=alt.Y('Filial_Cenario:N', title='Filial | Cenário', sort='-x'),
-                        tooltip=['Filial_Cenario', 'Custo Total Final']
-                    ).properties(title="Comparativo Multifilial", width=700, height=400)
-                    st.altair_chart(chart, use_container_width=True)
+                    #chart_data = df_multi.reset_index()
+                    #chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
+                    #chart = alt.Chart(chart_data).mark_bar().encode(
+                    #    x=alt.X('Custo Total Final:Q', title='Custo Total Final (R$)'),
+                    #    y=alt.Y('Filial_Cenario:N', title='Filial | Cenário', sort='-x'),
+                    #    tooltip=['Filial_Cenario', 'Custo Total Final']
+                    #).properties(title="Comparativo Multifilial", width=700, height=400)
+                    #st.altair_chart(chart, use_container_width=True)
                     best_row = df_multi.iloc[0]
                     best_filial = best_row["Filial"]
                     best_scenario = best_row["Cenário"]
