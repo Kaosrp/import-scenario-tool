@@ -466,6 +466,7 @@ elif module_selected == "Simulador de Cenários":
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
+        processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     if products:
         product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
         product = products[product_key]
@@ -480,7 +481,6 @@ elif module_selected == "Simulador de Cenários":
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
             st.subheader("Forma de Inserir o Valor FOB")
-            processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
