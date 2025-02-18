@@ -5,6 +5,7 @@ import os
 import altair as alt
 from datetime import datetime
 import io
+from streamlit_option_menu import option_menu
 
 
 # ============================
@@ -166,22 +167,35 @@ def generate_csv(sim_record):
 # ============================
 # Controle de Módulos na Aplicação
 # ============================
-if 'module' not in st.session_state:
-    st.session_state.module = "Simulador de Cenários"
+#if 'module' not in st.session_state:
+    #st.session_state.module = "Simulador de Cenários"
 
-st.sidebar.markdown("### Selecione o Módulo:")
-if st.sidebar.button("Simulador de Cenários"):
-    st.session_state.module = "Simulador de Cenários"
-if st.sidebar.button("Gerenciamento"):
-    st.session_state.module = "Gerenciamento"
-if st.sidebar.button("Produtos"):
-    st.session_state.module = "Produtos"
-if st.sidebar.button("Histórico de Simulações"):
-    st.session_state.module = "Histórico de Simulações"
+#st.sidebar.markdown("### Selecione o Módulo:")
+#if st.sidebar.button("Simulador de Cenários"):
+    #st.session_state.module = "Simulador de Cenários"
+#if st.sidebar.button("Gerenciamento"):
+    #st.session_state.module = "Gerenciamento"
+#if st.sidebar.button("Produtos"):
+    #st.session_state.module = "Produtos"
+#if st.sidebar.button("Histórico de Simulações"):
+    #st.session_state.module = "Histórico de Simulações"
 
-module_selected = st.session_state.module
+#module_selected = st.session_state.module
+#st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
+
+
+
+
+module_selected = option_menu(
+    menu_title="Menu de Módulos",  # Título do menu
+    options=["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"],
+    icons=["calculator", "tools", "box-seam", "clock-history"],  # ícones opcionais (usando Bootstrap icons)
+    menu_icon="cast",
+    default_index=0,
+    orientation="vertical",
+)
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
-
+st.session_state.module = module_selected
 # ============================
 # Carrega dados de configurações e produtos
 # ============================
