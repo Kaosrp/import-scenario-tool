@@ -480,6 +480,7 @@ elif module_selected == "Simulador de Cenários":
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
             st.subheader("Forma de Inserir o Valor FOB")
+            processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
@@ -514,7 +515,7 @@ elif module_selected == "Simulador de Cenários":
             #st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
             #st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
             
-            processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
+            #processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             base_values = {
                 "Valor CIF": valor_cif,
                 "Valor FOB": valor_fob_usd,
