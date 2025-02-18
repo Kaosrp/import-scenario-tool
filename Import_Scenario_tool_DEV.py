@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import altair as alt
+#import altair as alt
 from datetime import datetime
 import io
 
@@ -599,15 +599,15 @@ elif module_selected == "Simulador de Cenários":
                 df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
                 df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                 st.dataframe(df_display)
-                chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
-                chart = alt.Chart(chart_data).mark_bar().encode(
-                    x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
-                    y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
-                    tooltip=['Cenário', 'Custo Total']
-                ).properties(title="Comparativo de Cenários", width=700, height=400)
-                st.altair_chart(chart, use_container_width=True)
-                best_scenario = df.index[0]
-                best_cost = df.iloc[0]['Custo Total']
+                #chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
+                #chart = alt.Chart(chart_data).mark_bar().encode(
+                #    x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
+                #    y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
+                #    tooltip=['Cenário', 'Custo Total']
+                #).properties(title="Comparativo de Cenários", width=700, height=400)
+                #st.altair_chart(chart, use_container_width=True)
+                #best_scenario = df.index[0]
+                #best_cost = df.iloc[0]['Custo Total']
                 st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
                 
                 if st.button("Salvar Simulação no Histórico"):
