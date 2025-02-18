@@ -12,7 +12,7 @@ import io
 # ============================
 st.markdown(
     """
-    
+    <style>
     }
 
     /* Sidebar styling with its own gradient */
