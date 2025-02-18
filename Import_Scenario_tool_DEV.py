@@ -464,10 +464,10 @@ if module_selected == "Gerenciamento":
 elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
+    processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
-        processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
-    if products:
+        if products:
         product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
         product = products[product_key]
         st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
