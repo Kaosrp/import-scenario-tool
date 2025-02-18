@@ -461,19 +461,25 @@ if module_selected == "Gerenciamento":
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
-elif module_selected == "Simulador de Cenários":
-    st.header("Simulador de Cenários de Importação")
-    sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
-    processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
+if products:
+    # Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
+    options = []
+    mapping = {}
+    for ncm, prod in products.items():
+        label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
+        options.append(label)
+        mapping[label] = ncm
+
+    # Seleção do produto com o rótulo customizado
+    selected_label = st.selectbox("Selecione o Produto (NCM)", options)
+    product_key = mapping[selected_label]
+    product = products[product_key]
     
-    # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
-    if products:
-        product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
-        product = products[product_key]
-        st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
-    else:
-        st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
-        product = None
+    # Exibe a descrição separadamente, se necessário
+    st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
+else:
+    st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
+    product = None
 
     if sim_mode == "Simulador Único":
         if not data:
