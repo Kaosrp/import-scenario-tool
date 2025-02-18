@@ -13,17 +13,22 @@ import io
 st.markdown(
     """
     <style>
+    /* Define um fundo neutro para o app */
+    .stApp {
+        background: #f0f2f6; /* cor clara e neutra */
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
-    /* Sidebar styling with its own gradient */
+    
+    /* Define um fundo neutro para a sidebar */
     .css-1d391kg, .css-1d391kg * {
-        background: linear-gradient(135deg, #00C9FF, #92FE9D);
-        color: #fff;
+        background: #fff;
+        color: #333;
     }
-
-    /* Custom button styling with hover animation */
+    
+    /* Estilização dos botões com animação */
     div.stButton > button {
-        
+        background-color: #4a90e2; /* azul neutro */
         color: white;
         border: none;
         padding: 0.5em 1em;
@@ -31,21 +36,8 @@ st.markdown(
         transition: background-color 0.3s, transform 0.2s;
     }
     div.stButton > button:hover {
-        background-color: #2E2E2E;
+        background-color: #357ab8; /* azul um pouco mais escuro no hover */
         transform: scale(1.05);
-    }
-
-    /* Enable horizontal scrolling on tabs */
-    [role="tablist"] {
-      overflow-x: auto;
-      scroll-behavior: smooth;
-    }
-
-    /* Styling for expander content */
-    div.st-expanderContent {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 10px;
     }
     </style>
     """,
