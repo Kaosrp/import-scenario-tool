@@ -173,8 +173,8 @@ if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Gerenciamento"):
     st.session_state.module = "Gerenciamento"
-if st.sidebar.button("Produtos"):
-    st.session_state.module = "Produtos"
+#if st.sidebar.button("Produtos"):
+    #st.session_state.module = "Produtos"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
