@@ -13,19 +13,7 @@ import io
 st.markdown(
     """
     <style>
-    /* Define um fundo neutro para o app */
-    .stApp {
-        background: #f0f2f6; /* cor clara e neutra */
-        color: #333;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    /* Define um fundo neutro para a sidebar */
-    .css-1d391kg, .css-1d391kg * {
-        background: #fff;
-        color: #333;
-    }
-    
+      
     /* Estilização dos botões com animação */
     div.stButton > button {
         background-color: #4a90e2; /* azul neutro */
