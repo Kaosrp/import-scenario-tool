@@ -606,8 +606,8 @@ elif module_selected == "Simulador de Cenários":
                 #    tooltip=['Cenário', 'Custo Total']
                 #).properties(title="Comparativo de Cenários", width=700, height=400)
                 #st.altair_chart(chart, use_container_width=True)
-                #best_scenario = df.index[0]
-                #best_cost = df.iloc[0]['Custo Total']
+                best_scenario = df.index[0]
+                best_cost = df.iloc[0]['Custo Total']
                 st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
                 
                 if st.button("Salvar Simulação no Histórico"):
