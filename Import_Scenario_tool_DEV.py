@@ -679,7 +679,7 @@ elif module_selected == "Simulador de Cenários":
                 #st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
                 #st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-                st.write(f"#### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
                 base_values = {
                     "Valor CIF": valor_cif,
                     "Valor FOB": valor_fob_usd,
