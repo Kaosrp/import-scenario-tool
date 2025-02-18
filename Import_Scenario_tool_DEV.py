@@ -184,19 +184,13 @@ def generate_csv(sim_record):
 #module_selected = st.session_state.module
 #st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 
-
-
-
-module_selected = option_menu(
-    menu_title="Menu de Módulos",  # Título do menu
-    options=["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"],
-    icons=["calculator", "tools", "box-seam", "clock-history"],  # ícones opcionais (usando Bootstrap icons)
-    menu_icon="cast",
-    default_index=0,
-    orientation="vertical",
-)
+module_options = ["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"]
+st.sidebar.markdown("### Selecione o Módulo:")
+module_selected = st.sidebar.radio("", module_options)
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 st.session_state.module = module_selected
+
+
 # ============================
 # Carrega dados de configurações e produtos
 # ============================
