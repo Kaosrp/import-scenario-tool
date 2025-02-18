@@ -5,6 +5,7 @@ import os
 import altair as alt
 from datetime import datetime
 import io
+pip install streamlit-option-menu
 from streamlit_option_menu import option_menu
 
 
