@@ -480,8 +480,8 @@ elif module_selected == "Simulador de Cenários":
         product_key = mapping[selected_label]
         product = products[product_key]
 
-        # Exibe a descrição separadamente (opcional)
-        #st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
+        # (Opcional) Você pode exibir a descrição abaixo, se desejar
+        # st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
@@ -491,7 +491,6 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-            #st.subheader("Forma de Inserir o Valor FOB")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
@@ -521,12 +520,6 @@ elif module_selected == "Simulador de Cenários":
             seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
             valor_cif = valor_cif_base + seguro
             
-            #st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
-            #st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
-            #st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-            #st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
-            
-            #processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             base_values = {
                 "Valor CIF": valor_cif,
                 "Valor FOB": valor_fob_usd,
@@ -557,9 +550,17 @@ elif module_selected == "Simulador de Cenários":
                         continue
                     scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                     final_cost = scenario_cost + taxas_frete_brl_rateada
-                    costs[scenario] = {"Custo Total": final_cost}
+
+                    # Cria o dicionário com os campos na ordem desejada:
+                    costs[scenario] = {
+                        "Valor FOB": valor_fob_usd,
+                        "Valor CIF com Seguro": valor_cif,
+                        "Custo Total": final_cost
+                    }
                     if quantidade > 0:
                         costs[scenario]["Custo Unitário"] = final_cost / quantidade
+
+                    # Acrescenta os demais campos do cenário
                     for field, conf in config.items():
                         if isinstance(conf, dict):
                             field_type = conf.get("type", "fixed")
@@ -584,19 +585,12 @@ elif module_selected == "Simulador de Cenários":
                 if product:
                     product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                     total_product_taxes = sum(product_taxes.values())
-                    # Acrescenta os impostos a cada cenário
                     for scenario in costs:
                         costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
                         costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
                         costs[scenario]["Pis"] = product_taxes.get("pis", 0)
                         costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
                         costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"] + total_product_taxes
-                    #st.write("### Impostos do Produto:")
-                    #st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao', 0))}")
-                    #st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi', 0))}")
-                    #st.write(f"Pis: R$ {format_brl(product_taxes.get('pis', 0))}")
-                    #st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins', 0))}")
-                    #st.write("### Comparação de Cenários para a Filial Selecionada")
                 else:
                     for scenario in costs:
                         costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"]
@@ -720,13 +714,19 @@ elif module_selected == "Simulador de Cenários":
                             continue
                         scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                         final_cost = scenario_cost + taxas_frete_brl_rateada
+
+                        # Cria o dicionário com os campos principais:
                         multi_costs[(filial, scenario)] = {
                             "Filial": filial,
                             "Cenário": scenario,
+                            "Valor FOB": valor_fob_usd,
+                            "Valor CIF com Seguro": valor_cif,
                             "Custo Total": final_cost
                         }
                         if quantidade > 0:
                             multi_costs[(filial, scenario)]["Custo Unitário"] = final_cost / quantidade
+
+                        # Acrescenta os demais campos do cenário
                         for field, conf in config.items():
                             if isinstance(conf, dict):
                                 field_type = conf.get("type", "fixed")
@@ -752,12 +752,6 @@ elif module_selected == "Simulador de Cenários":
                     if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                         total_product_taxes = sum(product_taxes.values())
-                        #st.write("### Impostos do Produto:")
-                        #st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
-                        #st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
-                        #st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
-                        #st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
-                        # Acrescenta os impostos a cada cenário
                         for key in multi_costs:
                             multi_costs[key]["II"] = product_taxes.get("imposto_importacao", 0)
                             multi_costs[key]["IPI"] = product_taxes.get("ipi", 0)
@@ -828,6 +822,7 @@ elif module_selected == "Simulador de Cenários":
                     st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
             else:
                 st.info("Selecione pelo menos uma filial para comparar.")
+
                 
 # ============================
 # MÓDULO: HISTÓRICO DE SIMULAÇÕES
