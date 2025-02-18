@@ -479,7 +479,7 @@ elif module_selected == "Simulador de Cenários":
     # Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
     options = []
     mapping = {}
-        for ncm, prod in products.items():
+    for ncm, prod in products.items():
         label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
         options.append(label)
         mapping[label] = ncm
@@ -488,13 +488,12 @@ elif module_selected == "Simulador de Cenários":
     selected_label = st.selectbox("Selecione o Produto (NCM)", options)
     product_key = mapping[selected_label]
     product = products[product_key]
-    
-    # Exibe a descrição separadamente, se necessário
+
+    # Exibe a descrição separadamente (opcional)
     st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
-    else:
+else:
     st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
     product = None
-
     
     if sim_mode == "Simulador Único":
         if not data:
