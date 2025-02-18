@@ -16,7 +16,6 @@ st.markdown(
       
     /* Estilização dos botões com animação */
     div.stButton > button {
-        background-color: #d5dfeb; /* azul neutro */
         color: white;
         border: none;
         padding: 0.5em 1em;
