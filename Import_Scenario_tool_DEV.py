@@ -786,7 +786,7 @@ elif module_selected == "Simulador de Cenários":
                     
                     if st.button("Salvar Comparação no Histórico"):
                         history = load_history()
-                        processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
+                        #processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
                         simulation_record = {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "processo_nome": processo_nome_multi,
