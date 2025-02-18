@@ -579,12 +579,12 @@ elif module_selected == "Simulador de Cenários":
                         costs[scenario]["Pis"] = product_taxes.get("pis", 0)
                         costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
                         costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"] + total_product_taxes
-                    st.write("### Impostos do Produto:")
-                    st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao', 0))}")
-                    st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi', 0))}")
-                    st.write(f"Pis: R$ {format_brl(product_taxes.get('pis', 0))}")
-                    st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins', 0))}")
-                    st.write("### Comparação de Cenários para a Filial Selecionada")
+                    #st.write("### Impostos do Produto:")
+                    #st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao', 0))}")
+                    #st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi', 0))}")
+                    #st.write(f"Pis: R$ {format_brl(product_taxes.get('pis', 0))}")
+                    #st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins', 0))}")
+                    #st.write("### Comparação de Cenários para a Filial Selecionada")
                 else:
                     for scenario in costs:
                         costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"]
