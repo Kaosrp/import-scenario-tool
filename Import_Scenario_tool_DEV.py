@@ -466,35 +466,26 @@ elif module_selected == "Simulador de Cenários":
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
- # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
-    #if products:
-      #  product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
-       # product = products[product_key]
-        #st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
-    #else:
-     #   st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
-      #  product = None
-    
-# Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
+    # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
-    options = []
-    mapping = {}
-    for ncm, prod in products.items():
-        label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
-        options.append(label)
-        mapping[label] = ncm
+        options = []
+        mapping = {}
+        for ncm, prod in products.items():
+            label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
+            options.append(label)
+            mapping[label] = ncm
 
-    # Seleção do produto com o rótulo customizado
-    selected_label = st.selectbox("Selecione o Produto (NCM)", options)
-    product_key = mapping[selected_label]
-    product = products[product_key]
+        # Seleção do produto com o rótulo customizado
+        selected_label = st.selectbox("Selecione o Produto (NCM)", options)
+        product_key = mapping[selected_label]
+        product = products[product_key]
 
-    # Exibe a descrição separadamente (opcional)
-    st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
-else:
-    st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
-    product = None
-    
+        # Exibe a descrição separadamente (opcional)
+        st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
+    else:
+        st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
+        product = None
+        
     if sim_mode == "Simulador Único":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
