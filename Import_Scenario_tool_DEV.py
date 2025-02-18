@@ -740,11 +740,11 @@ elif module_selected == "Simulador de Cenários":
                     if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                         total_product_taxes = sum(product_taxes.values())
-                        st.write("### Impostos do Produto:")
-                        st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
-                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
-                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
-                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
+                        #st.write("### Impostos do Produto:")
+                        #st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
+                        #st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
+                        #st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
+                        #st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
                         # Acrescenta os impostos a cada cenário
                         for key in multi_costs:
                             multi_costs[key]["II"] = product_taxes.get("imposto_importacao", 0)
