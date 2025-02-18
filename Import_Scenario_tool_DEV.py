@@ -197,10 +197,13 @@ products = load_products()
 # ============================
 # MÓDULO: GERENCIAMENTO (Filiais, Cenários, Campos de Custo)
 # ============================
+
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
-    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
-    # --- (1) Gerenciamento de Filiais ---
+    # Cria as abas: Filiais, Cenários, Campos de Custo e Produtos
+    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo", "Produtos"])
+    
+    # --- Aba 1: Gerenciamento de Filiais ---
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -230,7 +233,8 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
-    # --- (2) Gerenciamento de Cenários ---
+    
+    # --- Aba 2: Gerenciamento de Cenários ---
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -274,7 +278,8 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
-    # --- (3) Gerenciamento de Campos de Custo ---
+    
+    # --- Aba 3: Gerenciamento de Campos de Custo ---
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -385,7 +390,8 @@ if module_selected == "Gerenciamento":
                             save_data(data)
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
- # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+    
+    # --- Aba 4: Gerenciamento de Produtos (NCM) ---
     with management_tabs[3]:
         st.subheader("Gerenciamento de Produtos (NCM)")
         st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
@@ -450,6 +456,7 @@ if module_selected == "Gerenciamento":
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
                 #st.experimental_rerun()
+
 
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
