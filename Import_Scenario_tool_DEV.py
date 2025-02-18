@@ -14,7 +14,7 @@ st.markdown(
     <style>
     /* Main app background with a juicy gradient */
     .stApp {
-        background: linear-gradient(135deg, #494C4E, #FF4B2B);
+        background: linear-gradient(135deg, #494C4E, #2E2E2E);
         color: #fff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
