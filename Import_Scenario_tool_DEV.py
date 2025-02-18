@@ -473,7 +473,7 @@ elif module_selected == "Simulador de Cenários":
         st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
-        product = None 
+        product = None
 
     if sim_mode == "Simulador Único":
         if not data:
