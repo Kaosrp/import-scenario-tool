@@ -461,7 +461,7 @@ if module_selected == "Gerenciamento":
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
-if products:
+elif products:
     # Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
     options = []
     mapping = {}
