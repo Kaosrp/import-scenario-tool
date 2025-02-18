@@ -23,7 +23,7 @@ st.markdown(
 
     /* Custom button styling with hover animation */
     div.stButton > button {
-        background-color: #FF4B2B;
+        background-color: #798997;
         color: white;
         border: none;
         padding: 0.5em 1em;
