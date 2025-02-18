@@ -589,7 +589,8 @@ elif module_selected == "Simulador de Cenários":
                         else:
                             costs[scenario][field] = conf
                     # Se desejar, você pode remover campos extras para deixar apenas os principais.
-            
+                st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
+                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
             if costs:
                 df = pd.DataFrame(costs).T.sort_values(by="Custo Final")
                 df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
