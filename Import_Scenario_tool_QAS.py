@@ -14,15 +14,7 @@ st.markdown(
     """
     <style>
       
-    /* Estilização dos botões com animação */
-    div.stButton > button {
-        color: white;
-        border: none;
-        padding: 0.5em 1em;
-        border-radius: 5px;
-        transition: background-color 0.3s, transform 0.2s;
-    }
-    div.stButton > button:hover {
+       div.stButton > button:hover {
         background-color: #bdcbdb; /* azul um pouco mais escuro no hover */
         transform: scale(1.05);
     }
