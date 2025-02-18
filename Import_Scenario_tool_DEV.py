@@ -480,7 +480,7 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-            st.subheader("Forma de Inserir o Valor FOB")
+            #st.subheader("Forma de Inserir o Valor FOB")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
