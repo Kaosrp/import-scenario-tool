@@ -466,7 +466,6 @@ elif module_selected == "Simulador de Cenários":
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
-    # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
     # Cria uma lista de opções customizadas e um dicionário para mapear o rótulo ao NCM real
     options = []
@@ -483,7 +482,7 @@ elif module_selected == "Simulador de Cenários":
     
     # Exibe a descrição separadamente, se necessário
     st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
-else:
+    else:
     st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
     product = None
 
