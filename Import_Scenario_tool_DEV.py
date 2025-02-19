@@ -716,7 +716,21 @@ elif module_selected == "Simulador de Cenários":
     st.header("DEV - Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
-    
+
+     # Para usuários não administradores, a seleção é feita por origem
+    if st.session_state.user_role != "Administrador":
+        frete_config = load_frete_config()
+        origem = st.selectbox("Selecione a Origem", list(frete_config.keys()))
+        frete_internacional_usd = frete_config[origem]["frete_internacional_usd"]
+        taxas_frete_brl = frete_config[origem]["taxas_frete_brl"]
+        st.write(f"Valores pré-configurados para {origem}:")
+        st.write(f"- Frete Internacional (USD): {frete_internacional_usd}")
+        st.write(f"- Taxas de Frete (BRL): {taxas_frete_brl}")
+    else:
+        # Administradores podem definir manualmente
+        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+        taxas_frete_brl = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=0.0)
+   
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
         options = []
