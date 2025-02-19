@@ -476,9 +476,6 @@ with management_tabs[3]:
             if "edit_product" in st.session_state:
                 del st.session_state.edit_product
             #st.experimental_rerun()
-
-
-
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
