@@ -238,18 +238,18 @@ def generate_csv(sim_record):
 # ============================
 # Controle de Módulos na Aplicação
 # ============================
-if 'module' not in st.session_state:
-    st.session_state.module = "Simulador de Cenários"
+#if 'module' not in st.session_state:
+ #   st.session_state.module = "Simulador de Cenários"
 
-st.sidebar.markdown("### Selecione o Módulo:")
-if st.sidebar.button("Simulador de Cenários"):
-    st.session_state.module = "Simulador de Cenários"
-if st.sidebar.button("Gerenciamento"):
-    st.session_state.module = "Gerenciamento"
-if st.sidebar.button("Histórico de Simulações"):
-    st.session_state.module = "Histórico de Simulações"
+#st.sidebar.markdown("### Selecione o Módulo:")
+#if st.sidebar.button("Simulador de Cenários"):
+#    st.session_state.module = "Simulador de Cenários"
+#if st.sidebar.button("Gerenciamento"):
+#    st.session_state.module = "Gerenciamento"
+#if st.sidebar.button("Histórico de Simulações"):
+#    st.session_state.module = "Histórico de Simulações"
 
-module_selected = st.session_state.module
+#module_selected = st.session_state.module
 #st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 
 # ============================
