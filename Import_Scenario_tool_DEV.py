@@ -512,7 +512,7 @@ if module_selected == "Gerenciamento":
                 st.info("Operação concluída com sucesso!")
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
-                st.experimental_rerun()
+                #st.experimental_rerun()
         
         st.markdown("---")
         
