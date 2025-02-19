@@ -1009,4 +1009,3 @@ elif module_selected == "Histórico de Simulações":
                     st.success("Registro excluído com sucesso!")
     else:
         st.info("Nenhuma simulação registrada no histórico.")
-
