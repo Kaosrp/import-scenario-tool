@@ -830,7 +830,7 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
          
     # MODO: COMPARAÇÃO MULTIFILIAL
-    elif sim_mode == "Comparação Multifilial":
+  elif sim_mode == "Comparação Multifilial":
            st.subheader("Comparação Multifilial")
         if not data:
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")        
@@ -994,8 +994,8 @@ elif module_selected == "Simulador de Cenários":
                             st.success("Comparação Multifilial salva no histórico com sucesso!")
                     else:
                         st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-                    #else:
-                        #st.info("Selecione pelo menos uma filial para comparar.")
+                    else:
+                        st.info("Selecione pelo menos uma filial para comparar.")
                     
     # MÓDULO: HISTÓRICO DE SIMULAÇÕES
     elif module_selected == "Histórico de Simulações":
