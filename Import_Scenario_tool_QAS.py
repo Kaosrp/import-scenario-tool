@@ -585,7 +585,7 @@ if module_selected == "Gerenciamento":
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
 elif module_selected == "Simulador de Cenários":
-    st.header("Simulador de Cenários de Importação")
+    st.header("QAS - Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
