@@ -5,6 +5,79 @@ import os
 #import altair as alt
 from datetime import datetime
 import io
+import streamlit as st
+
+# -----------------------------
+# Definição dos usuários
+# -----------------------------
+# Em produção, utilize métodos seguros para armazenamento/validação de senhas.
+USUARIOS = {
+    "admin": {"password": "adminpass", "role": "Administrador"},
+    "usuario": {"password": "userpass", "role": "Usuário"}
+}
+
+# -----------------------------
+# Inicializa variáveis na session_state
+# -----------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user_role = None
+    st.session_state.module = "Simulador de Cenários"
+
+# -----------------------------
+# Tela de Login
+# -----------------------------
+if not st.session_state.authenticated:
+    st.title("Login")
+    username = st.text_input("Usuário")
+    password = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        if username in USUARIOS and password == USUARIOS[username]["password"]:
+            st.session_state.authenticated = True
+            st.session_state.user_role = USUARIOS[username]["role"]
+            st.success("Login efetuado com sucesso!")
+            st.experimental_rerun()
+        else:
+            st.error("Usuário ou senha incorretos!")
+    st.stop()  # Para não executar o restante do app sem autenticação
+
+# -----------------------------
+# Menu Lateral para seleção de Módulos
+# -----------------------------
+st.sidebar.markdown("### Selecione o Módulo:")
+
+# Apenas Administrador pode acessar o módulo de Gerenciamento
+if st.session_state.user_role == "Administrador":
+    if st.sidebar.button("Gerenciamento"):
+        st.session_state.module = "Gerenciamento"
+
+# Módulos disponíveis para ambos os tipos de usuário
+if st.sidebar.button("Simulador de Cenários"):
+    st.session_state.module = "Simulador de Cenários"
+if st.sidebar.button("Histórico de Simulações"):
+    st.session_state.module = "Histórico de Simulações"
+
+# Botão de logout
+if st.sidebar.button("Sair"):
+    st.session_state.authenticated = False
+    st.session_state.user_role = None
+    st.experimental_rerun()
+
+# -----------------------------
+# Controle de acesso ao módulo Gerenciamento
+# -----------------------------
+module_selected = st.session_state.module
+if module_selected == "Gerenciamento" and st.session_state.user_role != "Administrador":
+    st.error("Acesso negado. Somente Administradores podem acessar este módulo.")
+    st.stop()
+
+# -----------------------------
+# Exemplo de continuação do app
+# -----------------------------
+st.write(f"Bem-vindo(a), {st.session_state.user_role}!")
+st.write(f"Módulo selecionado: {module_selected}")
+
+#---------continua daqui-------#
 
 # ============================
 # Juicy CSS Styling
