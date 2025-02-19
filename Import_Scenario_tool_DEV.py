@@ -587,170 +587,171 @@ elif module_selected == "Simulador de Cenários":
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
         
-            if sim_mode == "Simulador Único":
-            if not data:
-                st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
+   #if sim_mode == "Simulador Único":
+       if sim_mode == "Simulador Único":
+        if not data:
+            st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
+        else:
+            filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
+            modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
+            col1, col2 = st.columns(2)
+            if modo_valor_fob == "Valor Total":
+                with col1:
+                    valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
+                    quantidade = 1.0
+                    valor_unit_fob_usd = 0.0
+                with col2:
+                    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
             else:
-                filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-                modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
-                col1, col2 = st.columns(2)
-                if modo_valor_fob == "Valor Total":
-                    with col1:
-                        valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0)
-                        quantidade = 1.0
-                        valor_unit_fob_usd = 0.0
-                    with col2:
-                        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
-                else:
-                    with col1:
-                        valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0)
-                        quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0)
-                        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
-                        valor_fob_usd = valor_unit_fob_usd * quantidade
-                    with col2:
-                        st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
-                
-                percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0)
-                occupancy_fraction = percentual_ocupacao_conteiner / 100.0
-                frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
-                taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
-                taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
-                taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
-                
-                valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
-                seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
-                valor_cif = valor_cif_base + seguro
-                
-                base_values = {
-                    "Valor CIF": valor_cif,
-                    "Valor FOB": valor_fob_usd,
-                    "Frete Internacional": frete_internacional_usd_rateado
-                }
-                
-                # Se houver produto, calcula os impostos apenas uma vez:
-                if product:
-                    product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
-                    total_product_taxes = sum(product_taxes.values())
-                else:
-                    total_product_taxes = 0
-                
-                costs = {}
-                if filial_selected in data:
-                    for scenario, config in data[filial_selected].items():
-                        if scenario.lower() == "teste":
-                            continue
-                        tem_valor = False
-                        for field, conf in config.items():
-                            if isinstance(conf, dict):
-                                field_type = conf.get("type", "fixed")
-                                if field_type == "fixed" and conf.get("value", 0) > 0:
-                                    tem_valor = True
-                                elif field_type == "percentage":
-                                    base_name = conf.get("base", "")
-                                    base_val = base_values.get(base_name, 0)
-                                    if base_name.strip().lower() in ["valor fob", "frete internacional"]:
-                                        base_val = base_val * taxa_cambio
-                                    if base_val * conf.get("rate", 0) > 0:
-                                        tem_valor = True
-                            elif conf > 0:
+                with col1:
+                    valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0)
+                    quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0)
+                    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0)
+                    valor_fob_usd = valor_unit_fob_usd * quantidade
+                with col2:
+                    st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
+            
+            percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0)
+            occupancy_fraction = percentual_ocupacao_conteiner / 100.0
+            frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
+            taxas_frete_brl = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0)
+            taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
+            taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0)
+            
+            valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
+            seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
+            valor_cif = valor_cif_base + seguro
+            
+            base_values = {
+                "Valor CIF": valor_cif,
+                "Valor FOB": valor_fob_usd,
+                "Frete Internacional": frete_internacional_usd_rateado
+            }
+            
+            # Se houver produto, calcula os impostos apenas uma vez:
+            if product:
+                product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                total_product_taxes = sum(product_taxes.values())
+            else:
+                total_product_taxes = 0
+            
+            costs = {}
+            if filial_selected in data:
+                for scenario, config in data[filial_selected].items():
+                    if scenario.lower() == "teste":
+                        continue
+                    tem_valor = False
+                    for field, conf in config.items():
+                        if isinstance(conf, dict):
+                            field_type = conf.get("type", "fixed")
+                            if field_type == "fixed" and conf.get("value", 0) > 0:
                                 tem_valor = True
-                        if not tem_valor:
-                            continue
-                        # Cálculo do custo base do cenário (sem impostos)
-                        scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
-                        base_cost = scenario_cost + taxas_frete_brl_rateada
-                        # Acrescenta os impostos, se houver produto
-                        final_cost = base_cost + total_product_taxes
-                        
-                        # Cria o dicionário com os campos principais:
-                        costs[scenario] = {
-                            "Valor FOB": valor_fob_usd,
-                            "Valor CIF com Seguro": valor_cif,
-                            "Custo Final": final_cost
-                        }
-                        if quantidade > 0:
-                            costs[scenario]["Custo Unitário Final"] = final_cost / quantidade
-                            
-                        # Acrescenta os demais campos do cenário, se desejado:
-                        for field, conf in config.items():
-                            if isinstance(conf, dict):
-                                field_type = conf.get("type", "fixed")
-                                rate_by_occupancy = conf.get("rate_by_occupancy", False)
+                            elif field_type == "percentage":
                                 base_name = conf.get("base", "")
-                                if field_type == "fixed":
-                                    field_val = conf.get("value", 0)
-                                elif field_type == "percentage":
-                                    rate = conf.get("rate", 0)
-                                    base_val = base_values.get(base_name, 0)
-                                    if base_name.strip().lower() in ["valor fob", "frete internacional"]:
-                                        base_val = base_val * taxa_cambio
-                                    field_val = base_val * rate
-                                else:
-                                    field_val = 0
-                                if rate_by_occupancy:
-                                    field_val *= occupancy_fraction
-                                costs[scenario][field] = field_val
-                            else:
-                                costs[scenario][field] = conf
-                
-                        # Fim do loop para cada cenário
-                    st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-                    st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
-                
-                # Adiciona os impostos detalhados ao dicionário de custos, se houver produto:
-                if product:
-                    for scenario in costs:
-                        costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
-                        costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
-                        costs[scenario]["Pis"] = product_taxes.get("pis", 0)
-                        costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
-                # Adiciona o campo "Taxas Frete (BRL) Rateadas":
-                for scenario in costs:
-                    costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
-        
-                if costs:
-                    df = pd.DataFrame(costs).T.sort_values(by="Custo Final")
-                    df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-                    st.write("### Comparação por filial única")
-                    st.dataframe(df_display)
-                    best_scenario = df.index[0]
-                    best_cost = df.iloc[0]['Custo Final']
-                    st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo final de **R$ {format_brl(best_cost)}**.")
+                                base_val = base_values.get(base_name, 0)
+                                if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                    base_val = base_val * taxa_cambio
+                                if base_val * conf.get("rate", 0) > 0:
+                                    tem_valor = True
+                        elif conf > 0:
+                            tem_valor = True
+                    if not tem_valor:
+                        continue
+                    # Cálculo do custo base do cenário (sem impostos)
+                    scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
+                    base_cost = scenario_cost + taxas_frete_brl_rateada
+                    # Acrescenta os impostos, se houver produto
+                    final_cost = base_cost + total_product_taxes
                     
-                    if st.button("Salvar Simulação no Histórico"):
-                        history = load_history()
-                        simulation_record = {
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "processo_nome": processo_nome,
-                            "filial": filial_selected,
-                            "modo_valor_fob": modo_valor_fob,
-                            "valor_unit_fob_usd": valor_unit_fob_usd,
-                            "quantidade": float(quantidade),
-                            "valor_fob_usd": valor_fob_usd,
-                            "frete_internacional_usd": frete_internacional_usd,
-                            "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
-                            "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
-                            "taxas_frete_brl": taxas_frete_brl,
-                            "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
-                            "taxa_cambio": taxa_cambio,
-                            "seguro_0_15_valor_fob": float(seguro),
-                            "valor_cif": base_values["Valor CIF"],
-                            "best_scenario": best_scenario,
-                            "best_cost": best_cost,
-                            "results": costs,
-                            "multi_comparison": False,
-                            "final_cost_com_impostos": best_cost
-                        }
-                        if product:
-                            simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao", "")}
-                            simulation_record["product_taxes"] = product_taxes
-                        if quantidade > 0:
-                            simulation_record["custo_unitario_melhor"] = best_cost / quantidade
-                        history.append(simulation_record)
-                        save_history(history)
-                        st.success("Simulação salva no histórico com sucesso!")
-                else:
-                    st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+                    # Cria o dicionário com os campos principais:
+                    costs[scenario] = {
+                        "Valor FOB": valor_fob_usd,
+                        "Valor CIF com Seguro": valor_cif,
+                        "Custo Final": final_cost
+                    }
+                    if quantidade > 0:
+                        costs[scenario]["Custo Unitário Final"] = final_cost / quantidade
+                        
+                    # Acrescenta os demais campos do cenário, se desejado:
+                    for field, conf in config.items():
+                        if isinstance(conf, dict):
+                            field_type = conf.get("type", "fixed")
+                            rate_by_occupancy = conf.get("rate_by_occupancy", False)
+                            base_name = conf.get("base", "")
+                            if field_type == "fixed":
+                                field_val = conf.get("value", 0)
+                            elif field_type == "percentage":
+                                rate = conf.get("rate", 0)
+                                base_val = base_values.get(base_name, 0)
+                                if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                    base_val = base_val * taxa_cambio
+                                field_val = base_val * rate
+                            else:
+                                field_val = 0
+                            if rate_by_occupancy:
+                                field_val *= occupancy_fraction
+                            costs[scenario][field] = field_val
+                        else:
+                            costs[scenario][field] = conf
+                
+                st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
+                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+            
+            # Adiciona os impostos detalhados ao dicionário de custos, se houver produto:
+            if product:
+                for scenario in costs:
+                    costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
+                    costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
+                    costs[scenario]["Pis"] = product_taxes.get("pis", 0)
+                    costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
+            # Adiciona o campo "Taxas Frete (BRL) Rateadas":
+            for scenario in costs:
+                costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
+            
+            if costs:
+                df = pd.DataFrame(costs).T.sort_values(by="Custo Final")
+                df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                st.write("### Comparação por filial única")
+                st.dataframe(df_display)
+                best_scenario = df.index[0]
+                best_cost = df.iloc[0]['Custo Final']
+                st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo final de **R$ {format_brl(best_cost)}**.")
+                
+                if st.button("Salvar Simulação no Histórico"):
+                    history = load_history()
+                    simulation_record = {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "processo_nome": processo_nome,
+                        "filial": filial_selected,
+                        "modo_valor_fob": modo_valor_fob,
+                        "valor_unit_fob_usd": valor_unit_fob_usd,
+                        "quantidade": float(quantidade),
+                        "valor_fob_usd": valor_fob_usd,
+                        "frete_internacional_usd": frete_internacional_usd,
+                        "percentual_ocupacao_conteiner": percentual_ocupacao_conteiner,
+                        "frete_internacional_usd_rateado": frete_internacional_usd_rateado,
+                        "taxas_frete_brl": taxas_frete_brl,
+                        "taxas_frete_brl_rateada": taxas_frete_brl_rateada,
+                        "taxa_cambio": taxa_cambio,
+                        "seguro_0_15_valor_fob": float(seguro),
+                        "valor_cif": base_values["Valor CIF"],
+                        "best_scenario": best_scenario,
+                        "best_cost": best_cost,
+                        "results": costs,
+                        "multi_comparison": False,
+                        "final_cost_com_impostos": best_cost
+                    }
+                    if product:
+                        simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao", "")}
+                        simulation_record["product_taxes"] = product_taxes
+                    if quantidade > 0:
+                        simulation_record["custo_unitario_melhor"] = best_cost / quantidade
+                    history.append(simulation_record)
+                    save_history(history)
+                    st.success("Simulação salva no histórico com sucesso!")
+            else:
+                st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+         
 
     else:
         # MODO: COMPARAÇÃO MULTIFILIAL
