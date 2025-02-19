@@ -393,55 +393,55 @@ if module_selected == "Gerenciamento":
     
           # --- Aba 4: Gerenciamento de Produtos (NCM) ---
     with management_tabs[3]:
-    st.subheader("Gerenciamento de Produtos (NCM)")
-    st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
-
-    # Campo de busca para filtrar produtos
-    search_query = st.text_input("Buscar Produto", key="search_produto")
-
-    # Exibição dos produtos cadastrados
+        st.subheader("Gerenciamento de Produtos (NCM)")
+        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+    
+        # Campo de busca para filtrar produtos
+        search_query = st.text_input("Buscar Produto", key="search_produto")
+    
+        # Exibição dos produtos cadastrados
         if products:
-        st.markdown("### Produtos Cadastrados:")
-        # Filtra os produtos com base na busca
-        if search_query:
-            filtered_products = {
-                ncm: prod
-                for ncm, prod in products.items()
-                if search_query.lower() in ncm.lower() or search_query.lower() in prod.get("descricao", "").lower()
-            }
+            st.markdown("### Produtos Cadastrados:")
+            # Filtra os produtos com base na busca
+            if search_query:
+                filtered_products = {
+                    ncm: prod
+                    for ncm, prod in products.items()
+                    if search_query.lower() in ncm.lower() or search_query.lower() in prod.get("descricao", "").lower()
+                }
             else:
-            filtered_products = products
-
-                if filtered_products:
-            # Exibe cada produto em um "card" estilizado
+                filtered_products = products
+    
+            if filtered_products:
+                # Exibe cada produto em um "card" estilizado
                 for ncm, prod in filtered_products.items():
-                col1, col2 = st.columns([7, 3])
+                    col1, col2 = st.columns([7, 3])
                     with col1:
-                    product_html = f"""
-                    <div style="
-                        border: 1px solid #e0e0e0; 
-                        border-radius: 8px; 
-                        padding: 15px; 
-                        background: #fff; 
-                        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-                        margin-bottom: 15px;">
-                        <h4 style="margin-bottom: 10px; color: #333;">NCM: {ncm}</h4>
-                        <p style="margin: 0;"><strong>Descrição:</strong> {prod.get('descricao', 'N/A')}</p>
-                        <p style="margin: 0;"><strong>II:</strong> {prod.get('imposto_importacao', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('imposto_importacao', {}).get('base', 'N/A')})</p>
-                        <p style="margin: 0;"><strong>IPI:</strong> {prod.get('ipi', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('ipi', {}).get('base', 'N/A')})</p>
-                        <p style="margin: 0;"><strong>Pis:</strong> {prod.get('pis', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('pis', {}).get('base', 'N/A')})</p>
-                        <p style="margin: 0;"><strong>Cofins:</strong> {prod.get('cofins', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('cofins', {}).get('base', 'N/A')})</p>
-                    </div>
-                    """
-                    st.markdown(product_html, unsafe_allow_html=True)
+                        product_html = f"""
+                        <div style="
+                            border: 1px solid #e0e0e0; 
+                            border-radius: 8px; 
+                            padding: 15px; 
+                            background: #fff; 
+                            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                            margin-bottom: 15px;">
+                            <h4 style="margin-bottom: 10px; color: #333;">NCM: {ncm}</h4>
+                            <p style="margin: 0;"><strong>Descrição:</strong> {prod.get('descricao', 'N/A')}</p>
+                            <p style="margin: 0;"><strong>II:</strong> {prod.get('imposto_importacao', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('imposto_importacao', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>IPI:</strong> {prod.get('ipi', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('ipi', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>Pis:</strong> {prod.get('pis', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('pis', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>Cofins:</strong> {prod.get('cofins', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('cofins', {}).get('base', 'N/A')})</p>
+                        </div>
+                        """
+                        st.markdown(product_html, unsafe_allow_html=True)
                     with col2:
                         if st.button("Editar", key=f"edit_{ncm}"):
-                        st.session_state.edit_product = ncm
+                            st.session_state.edit_product = ncm
                         if st.button("Excluir", key=f"del_{ncm}"):
                             del products[ncm]
-                        save_products(products)
-                        st.success(f"Produto {ncm} excluído!")
-                        st.experimental_rerun()
+                            save_products(products)
+                            st.success(f"Produto {ncm} excluído!")
+                            st.experimental_rerun()
             else:
                 if search_query:
                     st.info("Nenhum produto encontrado para a busca.")
@@ -449,6 +449,7 @@ if module_selected == "Gerenciamento":
                     st.info("Nenhum produto cadastrado.")
         else:
             st.info("Nenhum produto cadastrado.")
+    
 
 
 # ============================
