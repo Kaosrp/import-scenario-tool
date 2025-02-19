@@ -267,8 +267,8 @@ if 'module' not in st.session_state:
 #if st.sidebar.button("Histórico de Simulações"):
 #   st.session_state.module = "Histórico de Simulações"
 
-module_selected = st.session_state.module
-st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
+#module_selected = st.session_state.module
+#st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 
 #module_options = ["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"]
 #st.sidebar.markdown("### Selecione o Módulo:")
