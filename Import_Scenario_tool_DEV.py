@@ -836,24 +836,24 @@ elif module_selected == "Simulador de Cenários":
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")        
         else:  
             filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()), key="multi_filiais")
-            if filiais_multi:
+        if filiais_multi:
                     st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
                     modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"], key="multi_modo_valor_fob")
                     col1, col2 = st.columns(2)
-                    if modo_valor_fob == "Valor Total":
-                        with col1:
+                if modo_valor_fob == "Valor Total":
+                    with col1:
                             valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0, key="multi_valor_fob_total")
                             quantidade = 1.0
                             valor_unit_fob_usd = 0.0
-                        with col2:
+                    with col2:
                             frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="multi_frete_total")
-                    else:
-                        with col1:
+                else:
+                    with col1:
                             valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0, key="multi_valor_unitario")
                             quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0, key="multi_quantidade")
                             frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="multi_frete_unit")
                             valor_fob_usd = valor_unit_fob_usd * quantidade
-                        with col2:
+                    with col2:
                             st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
                     percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0, key="multi_percentual_ocupacao")
                     occupancy_fraction = percentual_ocupacao_conteiner / 100.0
@@ -871,35 +871,35 @@ elif module_selected == "Simulador de Cenários":
                         "Valor FOB": valor_fob_usd,
                         "Frete Internacional": frete_internacional_usd_rateado
                     }
-                    if product:
+                if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                         total_product_taxes = sum(product_taxes.values())
-                    else:
+                else:
                         total_product_taxes = 0
                     
                     multi_costs = {}
-                    for filial in filiais_multi:
-                        if filial not in data:
+                 for filial in filiais_multi:
+                     if filial not in data:
                             continue
-                        for scenario, config in data[filial].items():
-                            if scenario.lower() == "teste":
+                    for scenario, config in data[filial].items():
+                        if scenario.lower() == "teste":
                                 continue
                             tem_valor = False
-                            for field, conf in config.items():
-                                if isinstance(conf, dict):
+                        for field, conf in config.items():
+                            if isinstance(conf, dict):
                                     field_type = conf.get("type", "fixed")
-                                    if field_type == "fixed" and conf.get("value", 0) > 0:
-                                        tem_valor = True
-                                    elif field_type == "percentage":
+                                if field_type == "fixed" and conf.get("value", 0) > 0:
+                                     tem_valor = True
+                                elif field_type == "percentage":
                                         base_name = conf.get("base", "")
                                         base_val = base_values.get(base_name, 0)
-                                        if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                    if base_name.strip().lower() in ["valor fob", "frete internacional"]:
                                             base_val = base_val * taxa_cambio
-                                        if base_val * conf.get("rate", 0) > 0:
+                                    if base_val * conf.get("rate", 0) > 0:
                                             tem_valor = True
-                                elif conf > 0:
+                            elif conf > 0:
                                     tem_valor = True
-                            if not tem_valor:
+                        if not tem_valor:
                                 continue
                             scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
                             base_cost = scenario_cost + taxas_frete_brl_rateada
@@ -912,35 +912,35 @@ elif module_selected == "Simulador de Cenários":
                                 "Valor CIF com Seguro": valor_cif,
                                 "Custo Final": final_cost
                             }
-                            if quantidade > 0:
+                        if quantidade > 0:
                                 multi_costs[(filial, scenario)]["Custo Unitário Final"] = final_cost / quantidade
                                 
-                            for field, conf in config.items():
-                                if isinstance(conf, dict):
+                        for field, conf in config.items():
+                            if isinstance(conf, dict):
                                     field_type = conf.get("type", "fixed")
                                     rate_by_occupancy = conf.get("rate_by_occupancy", False)
                                     base_name = conf.get("base", "")
-                                    if field_type == "fixed":
+                                if field_type == "fixed":
                                         field_val = conf.get("value", 0)
-                                    elif field_type == "percentage":
+                                elif field_type == "percentage":
                                         rate = conf.get("rate", 0)
                                         base_val = base_values.get(base_name, 0)
-                                        if base_name.strip().lower() in ["valor fob", "frete internacional"]:
+                                    if base_name.strip().lower() in ["valor fob", "frete internacional"]:
                                             base_val = base_val * taxa_cambio
                                         field_val = base_val * rate
-                                    else:
-                                        field_val = 0
-                                    if rate_by_occupancy:
-                                        field_val *= occupancy_fraction
                                 else:
+                                        field_val = 0
+                                if rate_by_occupancy:
+                                        field_val *= occupancy_fraction
+                            else:
                                     field_val = conf
                                 multi_costs[(filial, scenario)][field] = field_val
                             multi_costs[(filial, scenario)]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
-                    if multi_costs:
-                        if product:
+                if multi_costs:
+                    if product:
                             product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                             total_product_taxes = sum(product_taxes.values())
-                            for key in multi_costs:
+                        for key in multi_costs:
                                 multi_costs[key]["II"] = product_taxes.get("imposto_importacao", 0)
                                 multi_costs[key]["IPI"] = product_taxes.get("ipi", 0)
                                 multi_costs[key]["Pis"] = product_taxes.get("pis", 0)
@@ -955,7 +955,7 @@ elif module_selected == "Simulador de Cenários":
                         best_cost = best_row["Custo Final"]
                         st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo final de **R$ {format_brl(best_cost)}**.")
                         
-                        if st.button("Salvar Comparação no Histórico", key="multi_salvar_hist"):
+                    if st.button("Salvar Comparação no Histórico", key="multi_salvar_hist"):
                             history = load_history()
                             simulation_record = {
                                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -981,16 +981,16 @@ elif module_selected == "Simulador de Cenários":
                             }
                             df_multi.index = df_multi.index.map(lambda x: " | ".join(map(str, x)) if isinstance(x, tuple) else str(x))
                             simulation_record["results"] = df_multi.to_dict(orient="index")
-                            if product:
+                        if product:
                                 simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao", "")}
                                 simulation_record["product_taxes"] = product_taxes
                             simulation_record["final_cost_com_impostos"] = best_cost
                             history.append(simulation_record)
                             save_history(history)
                             st.success("Comparação Multifilial salva no histórico com sucesso!")
-                    else:
+                else:
                         st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-                    else:
+                else:
                         st.info("Selecione pelo menos uma filial para comparar.")
                     
     # MÓDULO: HISTÓRICO DE SIMULAÇÕES
