@@ -587,8 +587,8 @@ elif module_selected == "Simulador de Cenários":
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
         
-   #if sim_mode == "Simulador Único":
-       if sim_mode == "Simulador Único":
+  
+    if sim_mode == "Simulador Único":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
