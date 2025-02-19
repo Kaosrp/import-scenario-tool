@@ -834,9 +834,6 @@ elif module_selected == "Simulador de Cenários":
            st.subheader("Comparação Multifilial")
         if not data:
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")        
-        else:
-            st.subheader("Comparação Multifilial")
-                           
                 filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()), key="multi_filiais")
                 if filiais_multi:
                     st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
