@@ -826,11 +826,11 @@ elif module_selected == "Simulador de Cenários":
             history.append(simulation_record)
             save_history(history)
             st.success("Simulação salva no histórico com sucesso!")
-    else:
-        st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+            else:
+            st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
          
     # MODO: COMPARAÇÃO MULTIFILIAL
-        else:
+    else:
         st.subheader("Comparação Multifilial")
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
