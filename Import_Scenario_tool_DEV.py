@@ -897,7 +897,7 @@ elif module_selected == "Simulador de Cenários":
                                 pass  # já definido
                     df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo Final")
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-                    st.write("### Comparação Global (Multifilial)")
+                    st.write("### Comparação global (multifilial)")
                     st.dataframe(df_display)
                  #   chart_data = df_multi.reset_index()
                  #   chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
