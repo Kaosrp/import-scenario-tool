@@ -352,7 +352,7 @@ if module_selected == "Gerenciamento":
                                 st.success(f"Campo '{field}' atualizado com sucesso!")
                                                        
                             with col6:
-                                if st.button("🗑️", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
+                                if st.button("Delete", key=f"remover_{filial_for_field}_{scenario_for_field}_{field}"):
                                 del scenario_fields[field]
                                 save_data(data)
                                 st.success(f"Campo '{field}' removido com sucesso!")
