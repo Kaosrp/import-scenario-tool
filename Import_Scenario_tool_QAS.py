@@ -6,6 +6,94 @@ import os
 from datetime import datetime
 import io
 
+# -----------------------------
+# Definição dos usuários
+# -----------------------------
+# Em produção, utilize métodos seguros para armazenamento/validação de senhas.
+USUARIOS = {
+    "admin": {"password": "adminpass", "role": "Administrador"},
+    "usuario": {"password": "userpass", "role": "Usuário"}
+}
+
+# -----------------------------
+# Inicializa variáveis na session_state
+# -----------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user_role = None
+    st.session_state.module = "Simulador de Cenários"
+
+# -----------------------------
+# Tela de Login
+# -----------------------------
+if not st.session_state.authenticated:
+    st.title("Login")
+    username = st.text_input("Usuário", key="login_username")
+    password = st.text_input("Senha", type="password", key="login_password")
+    if st.button("Entrar", key="login_button"):
+        if username in USUARIOS and password == USUARIOS[username]["password"]:
+            st.session_state.authenticated = True
+            st.session_state.user_role = USUARIOS[username]["role"]
+            st.success("Login efetuado com sucesso!")
+            st.experimental_rerun()
+        else:
+            st.error("Usuário ou senha incorretos!")
+    st.stop()  # Não executa o restante sem autenticação
+
+# -----------------------------
+# Menu Lateral para seleção de Módulos
+# -----------------------------
+st.sidebar.markdown("### Selecione o Módulo:")
+
+# Módulos disponíveis para ambos os tipos de usuário
+if st.sidebar.button("Simulador de Cenários", key="sidebar_simulador"):
+    st.session_state.module = "Simulador de Cenários"
+if st.sidebar.button("Histórico de Simulações", key="sidebar_historico"):
+    st.session_state.module = "Histórico de Simulações"
+
+# Apenas Administrador pode acessar o módulo de Gerenciamento
+if st.session_state.user_role == "Administrador":
+    if st.sidebar.button("Gerenciamento", key="sidebar_gerenciamento"):
+        st.session_state.module = "Gerenciamento"
+
+# Botão de logout
+if st.sidebar.button("Sair", key="sidebar_logout"):
+    st.session_state.authenticated = False
+    st.session_state.user_role = None
+    st.experimental_rerun()
+
+# -----------------------------
+# Controle de acesso ao módulo Gerenciamento
+# -----------------------------
+module_selected = st.session_state.module
+if module_selected == "Gerenciamento" and st.session_state.user_role != "Administrador":
+    st.error("Acesso negado. Somente Administradores podem acessar este módulo.")
+    st.stop()
+
+# -----------------------------
+# Exemplo de continuação do app
+# -----------------------------
+st.write(f"Bem-vindo(a), {st.session_state.user_role}!")
+st.write(f"Módulo selecionado: {module_selected}")
+
+# ============================
+# Configuração de Fretes (Arquivo JSON)
+# ============================
+FRETE_CONFIG_FILE = "fretes_config.json"
+
+def load_frete_config():
+    if os.path.exists(FRETE_CONFIG_FILE):
+        with open(FRETE_CONFIG_FILE, "r") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def save_frete_config(config):
+    with open(FRETE_CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
 # ============================
 # Juicy CSS Styling
 # ============================
@@ -168,15 +256,15 @@ def generate_csv(sim_record):
 if 'module' not in st.session_state:
     st.session_state.module = "Simulador de Cenários"
 
-st.sidebar.markdown("### Selecione o Módulo:")
-if st.sidebar.button("Simulador de Cenários"):
-    st.session_state.module = "Simulador de Cenários"
-if st.sidebar.button("Gerenciamento"):
-    st.session_state.module = "Gerenciamento"
+#st.sidebar.markdown("### Selecione o Módulo:")
+#if st.sidebar.button("Simulador de Cenários"):
+#    st.session_state.module = "Simulador de Cenários"
+#if st.sidebar.button("Gerenciamento"):
+#    st.session_state.module = "Gerenciamento"
 #if st.sidebar.button("Produtos"):
-    #st.session_state.module = "Produtos"
-if st.sidebar.button("Histórico de Simulações"):
-    st.session_state.module = "Histórico de Simulações"
+#    #st.session_state.module = "Produtos"
+#if st.sidebar.button("Histórico de Simulações"):
+#   st.session_state.module = "Histórico de Simulações"
 
 module_selected = st.session_state.module
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
