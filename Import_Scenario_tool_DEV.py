@@ -173,20 +173,11 @@ if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Gerenciamento"):
     st.session_state.module = "Gerenciamento"
-#if st.sidebar.button("Produtos"):
-    #st.session_state.module = "Produtos"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
 module_selected = st.session_state.module
-st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
-
-#module_options = ["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"]
-#st.sidebar.markdown("### Selecione o Módulo:")
-#module_selected = st.sidebar.radio("", module_options)
 #st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
-#st.session_state.module = module_selected
-
 
 # ============================
 # Carrega dados de configurações e produtos
@@ -391,7 +382,7 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
                             
-             # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+    # --- Aba 4: Gerenciamento de Produtos (NCM) ---
     with management_tabs[3]:
         st.subheader("Gerenciamento de Produtos (NCM)")
         st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
