@@ -391,139 +391,143 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
     
-          # --- Aba 4: Gerenciamento de Produtos (NCM) ---
-    with management_tabs[3]:
-        st.subheader("Gerenciamento de Produtos (NCM)")
-        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+         # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+with management_tabs[3]:
+    st.subheader("Gerenciamento de Produtos (NCM)")
+    st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+
+    # ============================
+    # Formulário de Adição/ Edição (Topo)
+    # ============================
+    # Define uma âncora para o formulário
+    st.markdown('<div id="product_form"></div>', unsafe_allow_html=True)
     
-        # ============================
-        # Formulário de Adição/ Edição (Topo)
-        # ============================
-        # Define uma âncora para o formulário
-        st.markdown('<div id="product_form"></div>', unsafe_allow_html=True)
-        
-        # Verifica se está em modo de edição
-        edit_mode = st.session_state.get("edit_product", None)
-        if edit_mode:
-            st.subheader(f"Editar Produto (NCM: {edit_mode})")
-            prod_data = products.get(edit_mode, {})
+    # Verifica se está em modo de edição
+    edit_mode = st.session_state.get("edit_product", None)
+    if edit_mode:
+        st.subheader(f"Editar Produto (NCM: {edit_mode})")
+        prod_data = products.get(edit_mode, {})
+        # Botão para cancelar a edição e voltar ao modo de adição
+        if st.button("Cancelar Edição"):
+            del st.session_state.edit_product
+            st.experimental_rerun()
+    else:
+        st.subheader("Adicionar Novo Produto")
+        prod_data = {}
+
+    ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "", key="ncm_input")
+    descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""), key="descricao_input")
+    st.markdown("#### Alíquotas de Impostos (valores em %)")
+    
+    # Imposto de Importação (II)
+    st.markdown("**Imposto de Importação (II):**")
+    col_ii = st.columns(2)
+    with col_ii[0]:
+        ii_rate = st.number_input(
+            "Alíquota (%)",
+            min_value=0.0,
+            value=prod_data.get("imposto_importacao", {}).get("rate", 0.0) * 100,
+            step=0.1,
+            key="ii_rate"
+        )
+    with col_ii[1]:
+        ii_base = st.selectbox(
+            "Base",
+            ["Valor CIF", "Valor FOB", "Frete Internacional"],
+            index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")
+            ),
+            key="ii_base"
+        )
+    
+    # IPI
+    st.markdown("**IPI:**")
+    col_ipi = st.columns(2)
+    with col_ipi[0]:
+        ipi_rate = st.number_input(
+            "Alíquota (%)",
+            min_value=0.0,
+            value=prod_data.get("ipi", {}).get("rate", 0.0) * 100,
+            step=0.1,
+            key="ipi_rate"
+        )
+    with col_ipi[1]:
+        ipi_base = st.selectbox(
+            "Base",
+            ["Valor CIF", "Valor FOB", "Frete Internacional"],
+            index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                prod_data.get("ipi", {}).get("base", "Valor CIF")
+            ),
+            key="ipi_base"
+        )
+    
+    # Pis
+    st.markdown("**Pis:**")
+    col_pis = st.columns(2)
+    with col_pis[0]:
+        pis_rate = st.number_input(
+            "Alíquota (%)",
+            min_value=0.0,
+            value=prod_data.get("pis", {}).get("rate", 0.0) * 100,
+            step=0.1,
+            key="pis_rate"
+        )
+    with col_pis[1]:
+        pis_base = st.selectbox(
+            "Base",
+            ["Valor CIF", "Valor FOB", "Frete Internacional"],
+            index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                prod_data.get("pis", {}).get("base", "Valor CIF")
+            ),
+            key="pis_base"
+        )
+    
+    # Cofins
+    st.markdown("**Cofins:**")
+    col_cofins = st.columns(2)
+    with col_cofins[0]:
+        cofins_rate = st.number_input(
+            "Alíquota (%)",
+            min_value=0.0,
+            value=prod_data.get("cofins", {}).get("rate", 0.0) * 100,
+            step=0.1,
+            key="cofins_rate"
+        )
+    with col_cofins[1]:
+        cofins_base = st.selectbox(
+            "Base",
+            ["Valor CIF", "Valor FOB", "Frete Internacional"],
+            index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                prod_data.get("cofins", {}).get("base", "Valor CIF")
+            ),
+            key="cofins_base"
+        )
+    
+    if st.button("Salvar Produto"):
+        if not ncm_input.strip():
+            st.warning("Informe o NCM.")
         else:
-            st.subheader("Adicionar Novo Produto")
-            prod_data = {}
+            product_record = {
+                "descricao": descricao,
+                "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
+                "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
+                "pis": {"rate": pis_rate/100.0, "base": pis_base},
+                "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
+            }
+            products[ncm_input.strip()] = product_record
+            save_products(products)
+            st.success("Produto salvo com sucesso!")
+            st.info("Operação concluída com sucesso!")
+            if "edit_product" in st.session_state:
+                del st.session_state.edit_product
+            st.experimental_rerun()
     
-        ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "", key="ncm_input")
-        descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""), key="descricao_input")
-        st.markdown("#### Alíquotas de Impostos (valores em %)")
-        
-        # Imposto de Importação (II)
-        st.markdown("**Imposto de Importação (II):**")
-        col_ii = st.columns(2)
-        with col_ii[0]:
-            ii_rate = st.number_input(
-                "Alíquota (%)",
-                min_value=0.0,
-                value=prod_data.get("imposto_importacao", {}).get("rate", 0.0) * 100,
-                step=0.1,
-                key="ii_rate"
-            )
-        with col_ii[1]:
-            ii_base = st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
-                    prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")
-                ),
-                key="ii_base"
-            )
-        
-        # IPI
-        st.markdown("**IPI:**")
-        col_ipi = st.columns(2)
-        with col_ipi[0]:
-            ipi_rate = st.number_input(
-                "Alíquota (%)",
-                min_value=0.0,
-                value=prod_data.get("ipi", {}).get("rate", 0.0) * 100,
-                step=0.1,
-                key="ipi_rate"
-            )
-        with col_ipi[1]:
-            ipi_base = st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
-                    prod_data.get("ipi", {}).get("base", "Valor CIF")
-                ),
-                key="ipi_base"
-            )
-        
-        # Pis
-        st.markdown("**Pis:**")
-        col_pis = st.columns(2)
-        with col_pis[0]:
-            pis_rate = st.number_input(
-                "Alíquota (%)",
-                min_value=0.0,
-                value=prod_data.get("pis", {}).get("rate", 0.0) * 100,
-                step=0.1,
-                key="pis_rate"
-            )
-        with col_pis[1]:
-            pis_base = st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
-                    prod_data.get("pis", {}).get("base", "Valor CIF")
-                ),
-                key="pis_base"
-            )
-        
-        # Cofins
-        st.markdown("**Cofins:**")
-        col_cofins = st.columns(2)
-        with col_cofins[0]:
-            cofins_rate = st.number_input(
-                "Alíquota (%)",
-                min_value=0.0,
-                value=prod_data.get("cofins", {}).get("rate", 0.0) * 100,
-                step=0.1,
-                key="cofins_rate"
-            )
-        with col_cofins[1]:
-            cofins_base = st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
-                    prod_data.get("cofins", {}).get("base", "Valor CIF")
-                ),
-                key="cofins_base"
-            )
-        
-        if st.button("Salvar Produto"):
-            if not ncm_input.strip():
-                st.warning("Informe o NCM.")
-            else:
-                product_record = {
-                    "descricao": descricao,
-                    "imposto_importacao": {"rate": ii_rate / 100.0, "base": ii_base},
-                    "ipi": {"rate": ipi_rate / 100.0, "base": ipi_base},
-                    "pis": {"rate": pis_rate / 100.0, "base": pis_base},
-                    "cofins": {"rate": cofins_rate / 100.0, "base": cofins_base}
-                }
-                products[ncm_input.strip()] = product_record
-                save_products(products)
-                st.success("Produto salvo com sucesso!")
-                st.info("Operação concluída com sucesso!")
-                if "edit_product" in st.session_state:
-                    del st.session_state.edit_product
-                st.experimental_rerun()
-        
-        # Se estiver em modo de edição, injeta um script para rolar até o formulário
-        if st.session_state.get("edit_product", None):
-            st.markdown('<script>window.location.hash = "product_form";</script>', unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
+    # Se estiver em modo de edição, injeta um script para rolar até o formulário
+    if st.session_state.get("edit_product", None):
+        st.markdown('<script>window.location.hash = "product_form";</script>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
     # ============================
     # Ferramenta de Busca e Listagem de Produtos (Parte Inferior)
     # ============================
@@ -574,7 +578,7 @@ if module_selected == "Gerenciamento":
             st.info("Nenhum produto encontrado para a busca.")
     else:
         st.info("Nenhum produto cadastrado.")
-                     
+
           
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
