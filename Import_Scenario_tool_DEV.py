@@ -291,8 +291,8 @@ if module_selected == "Gerenciamento":
             else:
                 scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="gerenciamento_cenario")
                 scenario_fields = data[filial_for_field][scenario_for_field]
-                st.markdown("### Campos Existentes:") 
-                st.write("**Nome do Campo |         Tipo        | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
+                st.markdown("### Campos existentes:") 
+                #st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
