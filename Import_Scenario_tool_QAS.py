@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import altair as alt
+#import altair as alt
 from datetime import datetime
 import io
-
 
 # ============================
 # Juicy CSS Styling
@@ -174,13 +173,20 @@ if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Gerenciamento"):
     st.session_state.module = "Gerenciamento"
-if st.sidebar.button("Produtos"):
-    st.session_state.module = "Produtos"
+#if st.sidebar.button("Produtos"):
+    #st.session_state.module = "Produtos"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
 module_selected = st.session_state.module
 st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
+
+#module_options = ["Simulador de Cenários", "Gerenciamento", "Produtos", "Histórico de Simulações"]
+#st.sidebar.markdown("### Selecione o Módulo:")
+#module_selected = st.sidebar.radio("", module_options)
+#st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
+#st.session_state.module = module_selected
+
 
 # ============================
 # Carrega dados de configurações e produtos
@@ -191,10 +197,13 @@ products = load_products()
 # ============================
 # MÓDULO: GERENCIAMENTO (Filiais, Cenários, Campos de Custo)
 # ============================
+
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
-    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo"])
-    # --- (1) Gerenciamento de Filiais ---
+    # Cria as abas: Filiais, Cenários, Campos de Custo e Produtos
+    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo", "Produtos"])
+    
+    # --- Aba 1: Gerenciamento de Filiais ---
     with management_tabs[0]:
         st.subheader("Gerenciamento de Filiais")
         new_filial = st.text_input("Nova Filial", key="new_filial_input")
@@ -224,7 +233,8 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
         else:
             st.info("Nenhuma filial cadastrada.")
-    # --- (2) Gerenciamento de Cenários ---
+    
+    # --- Aba 2: Gerenciamento de Cenários ---
     with management_tabs[1]:
         st.subheader("Gerenciamento de Cenários")
         if not data:
@@ -268,7 +278,8 @@ if module_selected == "Gerenciamento":
                         st.info("Recarregue a página para ver as alterações.")
                 else:
                     st.warning("Digite um nome válido para o cenário.")
-    # --- (3) Gerenciamento de Campos de Custo ---
+        
+           # --- Aba 3: Gerenciamento de Campos de Custo ---
     with management_tabs[2]:
         st.subheader("Gerenciamento de Campos de Custo")
         if not data:
@@ -280,8 +291,8 @@ if module_selected == "Gerenciamento":
             else:
                 scenario_for_field = st.selectbox("Selecione o Cenário", list(data[filial_for_field].keys()), key="gerenciamento_cenario")
                 scenario_fields = data[filial_for_field][scenario_for_field]
-                st.markdown("### Campos Existentes:") 
-                st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
+                st.markdown("### Campos existentes:") 
+                #st.write("**Nome do Campo | Tipo | Valor/Taxa | Base | Ratear Ocupação? | Remover**")
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
@@ -379,95 +390,228 @@ if module_selected == "Gerenciamento":
                             save_data(data)
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
-
-# ============================
-# MÓDULO: GERENCIAMENTO DE PRODUTOS
-# ============================
-elif module_selected == "Produtos":
-    st.header("Gerenciamento de Produtos (NCM)")
-    st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
-    if products:
-        st.markdown("### Produtos Cadastrados:")
-        for ncm in list(products.keys()):
-            prod = products[ncm]
-            col1, col2, col3 = st.columns([3, 3, 1])
-            with col1:
-                st.write(f"**NCM:** {ncm}  \n **Descrição:** {prod.get('descricao','')}")
-                st.write(f"**II:** {prod.get('imposto_importacao', {}).get('rate',0)*100}% (Base: {prod.get('imposto_importacao', {}).get('base','')})")
-                st.write(f"**IPI:** {prod.get('ipi', {}).get('rate',0)*100}% (Base: {prod.get('ipi', {}).get('base','')})")
-                st.write(f"**Pis:** {prod.get('pis', {}).get('rate',0)*100}% (Base: {prod.get('pis', {}).get('base','')})")
-                st.write(f"**Cofins:** {prod.get('cofins', {}).get('rate',0)*100}% (Base: {prod.get('cofins', {}).get('base','')})")
-            with col2:
-                if st.button("Editar", key=f"edit_{ncm}"):
-                    st.session_state.edit_product = ncm
-                    # st.experimental_rerun()
-            with col3:
-                if st.button("Excluir", key=f"del_{ncm}"):
-                    del products[ncm]
-                    save_products(products)
-                    st.success(f"Produto {ncm} excluído!")
-                    st.experimental_rerun()
-    else:
-        st.info("Nenhum produto cadastrado.")
-    st.markdown("---")
-    edit_mode = st.session_state.get("edit_product", None)
-    if edit_mode:
-        st.subheader(f"Editar Produto (NCM: {edit_mode})")
-        prod_data = products.get(edit_mode, {})
-    else:
-        st.subheader("Adicionar Novo Produto")
-        prod_data = {}
-    ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "")
-    descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""))
-    st.markdown("#### Alíquotas de Impostos (valores em %)")
-    ii_rate = st.number_input("Imposto de Importação (II)", min_value=0.0, value=prod_data.get("imposto_importacao", {}).get("rate", 0.0)*100, step=0.1)
-    ii_base = st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ii_base") if not prod_data.get("imposto_importacao") else st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")), key="ii_base")
-    ipi_rate = st.number_input("IPI", min_value=0.0, value=prod_data.get("ipi", {}).get("rate", 0.0)*100, step=0.1)
-    ipi_base = st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ipi_base") if not prod_data.get("ipi") else st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("ipi", {}).get("base", "Valor CIF")), key="ipi_base")
-    pis_rate = st.number_input("Pis", min_value=0.0, value=prod_data.get("pis", {}).get("rate", 0.0)*100, step=0.1)
-    pis_base = st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="pis_base") if not prod_data.get("pis") else st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("pis", {}).get("base", "Valor CIF")), key="pis_base")
-    cofins_rate = st.number_input("Cofins", min_value=0.0, value=prod_data.get("cofins", {}).get("rate", 0.0)*100, step=0.1)
-    cofins_base = st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="cofins_base") if not prod_data.get("cofins") else st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("cofins", {}).get("base", "Valor CIF")), key="cofins_base")
-    if st.button("Salvar Produto"):
-        if not ncm_input.strip():
-            st.warning("Informe o NCM.")
-        else:
-            product_record = {
-                "descricao": descricao,
-                "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
-                "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
-                "pis": {"rate": pis_rate/100.0, "base": pis_base},
-                "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
-            }
-            products[ncm_input.strip()] = product_record
-            save_products(products)
-            st.success("Produto salvo com sucesso!")
-            if "edit_product" in st.session_state:
+                            
+             # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+    with management_tabs[3]:
+        st.subheader("Gerenciamento de Produtos (NCM)")
+        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+    
+        # ============================
+        # Formulário de Adição/ Edição (Topo)
+        # ============================
+        # Define uma âncora para o formulário
+        st.markdown('<div id="product_form"></div>', unsafe_allow_html=True)
+        
+        # Verifica se está em modo de edição
+        edit_mode = st.session_state.get("edit_product", None)
+        if edit_mode:
+            st.subheader(f"Editar Produto (NCM: {edit_mode})")
+            prod_data = products.get(edit_mode, {})
+            # Botão para cancelar a edição e voltar ao modo de adição
+            if st.button("Cancelar Edição"):
                 del st.session_state.edit_product
-            #st.experimental_rerun()
+                #st.experimental_rerun()
+        else:
+            st.subheader("Adicionar Novo Produto")
+            prod_data = {}
+    
+        ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "", key="ncm_input")
+        descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""), key="descricao_input")
+        st.markdown("#### Alíquotas de Impostos (valores em %)")
+        
+        # Imposto de Importação (II)
+        st.markdown("**Imposto de Importação (II):**")
+        col_ii = st.columns(2)
+        with col_ii[0]:
+            ii_rate = st.number_input(
+                "Alíquota (%)",
+                min_value=0.0,
+                value=prod_data.get("imposto_importacao", {}).get("rate", 0.0) * 100,
+                step=0.1,
+                key="ii_rate"
+            )
+        with col_ii[1]:
+            ii_base = st.selectbox(
+                "Base",
+                ["Valor CIF", "Valor FOB", "Frete Internacional"],
+                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                    prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")
+                ),
+                key="ii_base"
+            )
+        
+        # IPI
+        st.markdown("**IPI:**")
+        col_ipi = st.columns(2)
+        with col_ipi[0]:
+            ipi_rate = st.number_input(
+                "Alíquota (%)",
+                min_value=0.0,
+                value=prod_data.get("ipi", {}).get("rate", 0.0) * 100,
+                step=0.1,
+                key="ipi_rate"
+            )
+        with col_ipi[1]:
+            ipi_base = st.selectbox(
+                "Base",
+                ["Valor CIF", "Valor FOB", "Frete Internacional"],
+                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                    prod_data.get("ipi", {}).get("base", "Valor CIF")
+                ),
+                key="ipi_base"
+            )
+        
+        # Pis
+        st.markdown("**Pis:**")
+        col_pis = st.columns(2)
+        with col_pis[0]:
+            pis_rate = st.number_input(
+                "Alíquota (%)",
+                min_value=0.0,
+                value=prod_data.get("pis", {}).get("rate", 0.0) * 100,
+                step=0.1,
+                key="pis_rate"
+            )
+        with col_pis[1]:
+            pis_base = st.selectbox(
+                "Base",
+                ["Valor CIF", "Valor FOB", "Frete Internacional"],
+                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                    prod_data.get("pis", {}).get("base", "Valor CIF")
+                ),
+                key="pis_base"
+            )
+        
+        # Cofins
+        st.markdown("**Cofins:**")
+        col_cofins = st.columns(2)
+        with col_cofins[0]:
+            cofins_rate = st.number_input(
+                "Alíquota (%)",
+                min_value=0.0,
+                value=prod_data.get("cofins", {}).get("rate", 0.0) * 100,
+                step=0.1,
+                key="cofins_rate"
+            )
+        with col_cofins[1]:
+            cofins_base = st.selectbox(
+                "Base",
+                ["Valor CIF", "Valor FOB", "Frete Internacional"],
+                index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
+                    prod_data.get("cofins", {}).get("base", "Valor CIF")
+                ),
+                key="cofins_base"
+            )
+        
+        if st.button("Salvar Produto"):
+            if not ncm_input.strip():
+                st.warning("Informe o NCM.")
+            else:
+                product_record = {
+                    "descricao": descricao,
+                    "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
+                    "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
+                    "pis": {"rate": pis_rate/100.0, "base": pis_base},
+                    "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
+                }
+                products[ncm_input.strip()] = product_record
+                save_products(products)
+                st.success("Produto salvo com sucesso!")
+                st.balloons()
+                st.info("Operação concluída com sucesso!")
+                if "edit_product" in st.session_state:
+                    del st.session_state.edit_product
+                #st.experimental_rerun()
+        
+        # Se estiver em modo de edição, injeta um script para rolar até o formulário
+        if st.session_state.get("edit_product", None):
+            st.markdown('<script>window.location.hash = "product_form";</script>', unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # ============================
+        # Ferramenta de Busca e Listagem de Produtos (Parte Inferior)
+        # ============================
+        st.subheader("Produtos Cadastrados")
+        search_query = st.text_input("Buscar Produto", key="search_produto")
+        
+        if products:
+            # Filtra os produtos com base na busca
+            if search_query:
+                filtered_products = {
+                    ncm: prod for ncm, prod in products.items()
+                    if search_query.lower() in ncm.lower() or search_query.lower() in prod.get("descricao", "").lower()
+                }
+            else:
+                filtered_products = products
+    
+            if filtered_products:
+                for ncm, prod in filtered_products.items():
+                    col1, col2 = st.columns([7, 3])
+                    with col1:
+                        product_html = f"""
+                        <div style="
+                            border: 1px solid #e0e0e0; 
+                            border-radius: 8px; 
+                            padding: 15px; 
+                            background: #fff; 
+                            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                            margin-bottom: 15px;">
+                            <h4 style="margin-bottom: 10px; color: #333;">NCM: {ncm}</h4>
+                            <p style="margin: 0;"><strong>Descrição:</strong> {prod.get('descricao', 'N/A')}</p>
+                            <p style="margin: 0;"><strong>II:</strong> {prod.get('imposto_importacao', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('imposto_importacao', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>IPI:</strong> {prod.get('ipi', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('ipi', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>Pis:</strong> {prod.get('pis', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('pis', {}).get('base', 'N/A')})</p>
+                            <p style="margin: 0;"><strong>Cofins:</strong> {prod.get('cofins', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('cofins', {}).get('base', 'N/A')})</p>
+                        </div>
+                        """
+                        st.markdown(product_html, unsafe_allow_html=True)
+                    with col2:
+                        if st.button("Editar", key=f"edit_{ncm}"):
+                            st.session_state.edit_product = ncm
+                            #st.experimental_rerun()
+                        if st.button("Excluir", key=f"del_{ncm}"):
+                            del products[ncm]
+                            save_products(products)
+                            st.success(f"Produto {ncm} excluído!")
+                            st.experimental_rerun()
+            else:
+                st.info("Nenhum produto encontrado para a busca.")
+        else:
+            st.info("Nenhum produto cadastrado.")
 
+          
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
 elif module_selected == "Simulador de Cenários":
     st.header("Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
+    processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
-        product_key = st.selectbox("Selecione o Produto (NCM)", list(products.keys()))
+        options = []
+        mapping = {}
+        for ncm, prod in products.items():
+            label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
+            options.append(label)
+            mapping[label] = ncm
+
+        # Seleção do produto com o rótulo customizado
+        selected_label = st.selectbox("Selecione o Produto (NCM)", options)
+        product_key = mapping[selected_label]
         product = products[product_key]
-        st.markdown(f"**Descrição do Produto:** {product.get('descricao', 'Sem descrição')}")
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
-
+        
+  
     if sim_mode == "Simulador Único":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-            st.subheader("Forma de Inserir o Valor FOB")
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"])
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
@@ -497,17 +641,18 @@ elif module_selected == "Simulador de Cenários":
             seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
             valor_cif = valor_cif_base + seguro
             
-            st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
-            st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
-            st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-            st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
-            
-            processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
             base_values = {
                 "Valor CIF": valor_cif,
                 "Valor FOB": valor_fob_usd,
                 "Frete Internacional": frete_internacional_usd_rateado
             }
+            
+            # Se houver produto, calcula os impostos apenas uma vez:
+            if product:
+                product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                total_product_taxes = sum(product_taxes.values())
+            else:
+                total_product_taxes = 0
             
             costs = {}
             if filial_selected in data:
@@ -531,11 +676,22 @@ elif module_selected == "Simulador de Cenários":
                             tem_valor = True
                     if not tem_valor:
                         continue
+                    # Cálculo do custo base do cenário (sem impostos)
                     scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
-                    final_cost = scenario_cost + taxas_frete_brl_rateada
-                    costs[scenario] = {"Custo Total": final_cost}
+                    base_cost = scenario_cost + taxas_frete_brl_rateada
+                    # Acrescenta os impostos, se houver produto
+                    final_cost = base_cost + total_product_taxes
+                    
+                    # Cria o dicionário com os campos principais:
+                    costs[scenario] = {
+                        "Valor FOB": valor_fob_usd,
+                        "Valor CIF com Seguro": valor_cif,
+                        "Custo Final": final_cost
+                    }
                     if quantidade > 0:
-                        costs[scenario]["Custo Unitário"] = final_cost / quantidade
+                        costs[scenario]["Custo Unitário Final"] = final_cost / quantidade
+                        
+                    # Acrescenta os demais campos do cenário, se desejado:
                     for field, conf in config.items():
                         if isinstance(conf, dict):
                             field_type = conf.get("type", "fixed")
@@ -554,42 +710,31 @@ elif module_selected == "Simulador de Cenários":
                             if rate_by_occupancy:
                                 field_val *= occupancy_fraction
                             costs[scenario][field] = field_val
-                    costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
+                        else:
+                            costs[scenario][field] = conf
+                
+                st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
+                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+            
+            # Adiciona os impostos detalhados ao dicionário de custos, se houver produto:
+            if product:
+                for scenario in costs:
+                    costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
+                    costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
+                    costs[scenario]["Pis"] = product_taxes.get("pis", 0)
+                    costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
+            # Adiciona o campo "Taxas Frete (BRL) Rateadas":
+            for scenario in costs:
+                costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
             
             if costs:
-                if product:
-                    product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
-                    total_product_taxes = sum(product_taxes.values())
-                    # Acrescenta os impostos a cada cenário
-                    for scenario in costs:
-                        costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
-                        costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
-                        costs[scenario]["Pis"] = product_taxes.get("pis", 0)
-                        costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
-                        costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"] + total_product_taxes
-                    st.write("### Impostos do Produto:")
-                    st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao', 0))}")
-                    st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi', 0))}")
-                    st.write(f"Pis: R$ {format_brl(product_taxes.get('pis', 0))}")
-                    st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins', 0))}")
-                    st.write("### Comparação de Cenários para a Filial Selecionada")
-                else:
-                    for scenario in costs:
-                        costs[scenario]["Custo Final"] = costs[scenario]["Custo Total"]
-
-                df = pd.DataFrame(costs).T.sort_values(by="Custo Total")
+                df = pd.DataFrame(costs).T.sort_values(by="Custo Final")
                 df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
+                st.write("### Comparação por filial única")
                 st.dataframe(df_display)
-                chart_data = df.reset_index().rename(columns={'index': 'Cenário'})
-                chart = alt.Chart(chart_data).mark_bar().encode(
-                    x=alt.X('Custo Total:Q', title='Custo Total (R$)'),
-                    y=alt.Y('Cenário:N', title='Cenário', sort='-x'),
-                    tooltip=['Cenário', 'Custo Total']
-                ).properties(title="Comparativo de Cenários", width=700, height=400)
-                st.altair_chart(chart, use_container_width=True)
                 best_scenario = df.index[0]
-                best_cost = df.iloc[0]['Custo Total']
-                st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo total de **R$ {format_brl(best_cost)}**.")
+                best_cost = df.iloc[0]['Custo Final']
+                st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo final de **R$ {format_brl(best_cost)}**.")
                 
                 if st.button("Salvar Simulação no Histórico"):
                     history = load_history()
@@ -625,7 +770,8 @@ elif module_selected == "Simulador de Cenários":
                     st.success("Simulação salva no histórico com sucesso!")
             else:
                 st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-    
+         
+
     else:
         # MODO: COMPARAÇÃO MULTIFILIAL
         st.subheader("Comparação Multifilial")
@@ -661,15 +807,22 @@ elif module_selected == "Simulador de Cenários":
                 valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
                 seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
                 valor_cif = valor_cif_base + seguro
-                st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
-                st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
+                #st.write(f"Frete Internacional Rateado (USD): {frete_internacional_usd_rateado:,.2f}")
+                #st.write(f"Taxas do Frete (BRL) Rateadas: {format_brl(taxas_frete_brl_rateada)}")
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-                st.write(f"### Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
                 base_values = {
                     "Valor CIF": valor_cif,
                     "Valor FOB": valor_fob_usd,
                     "Frete Internacional": frete_internacional_usd_rateado
                 }
+                # Se houver produto, calcula os impostos apenas uma vez:
+                if product:
+                    product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
+                    total_product_taxes = sum(product_taxes.values())
+                else:
+                    total_product_taxes = 0
+                
                 multi_costs = {}
                 for filial in filiais_multi:
                     if filial not in data:
@@ -695,14 +848,21 @@ elif module_selected == "Simulador de Cenários":
                         if not tem_valor:
                             continue
                         scenario_cost = calculate_total_cost_extended(config, base_values, taxa_cambio, occupancy_fraction)
-                        final_cost = scenario_cost + taxas_frete_brl_rateada
+                        base_cost = scenario_cost + taxas_frete_brl_rateada
+                        final_cost = base_cost + total_product_taxes
+                        
+                        # Cria o dicionário com os campos principais:
                         multi_costs[(filial, scenario)] = {
                             "Filial": filial,
                             "Cenário": scenario,
-                            "Custo Total": final_cost
+                            "Valor FOB": valor_fob_usd,
+                            "Valor CIF com Seguro": valor_cif,
+                            "Custo Final": final_cost
                         }
                         if quantidade > 0:
-                            multi_costs[(filial, scenario)]["Custo Unitário"] = final_cost / quantidade
+                            multi_costs[(filial, scenario)]["Custo Unitário Final"] = final_cost / quantidade
+                            
+                        # Acrescenta os demais campos do cenário, se desejado
                         for field, conf in config.items():
                             if isinstance(conf, dict):
                                 field_type = conf.get("type", "fixed")
@@ -728,50 +888,38 @@ elif module_selected == "Simulador de Cenários":
                     if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
                         total_product_taxes = sum(product_taxes.values())
-                        st.write("### Impostos do Produto:")
-                        st.write(f"II: R$ {format_brl(product_taxes.get('imposto_importacao',0))}")
-                        st.write(f"IPI: R$ {format_brl(product_taxes.get('ipi',0))}")
-                        st.write(f"Pis: R$ {format_brl(product_taxes.get('pis',0))}")
-                        st.write(f"Cofins: R$ {format_brl(product_taxes.get('cofins',0))}")
-                        # Acrescenta os impostos a cada cenário
                         for key in multi_costs:
                             multi_costs[key]["II"] = product_taxes.get("imposto_importacao", 0)
                             multi_costs[key]["IPI"] = product_taxes.get("ipi", 0)
                             multi_costs[key]["Pis"] = product_taxes.get("pis", 0)
                             multi_costs[key]["Cofins"] = product_taxes.get("cofins", 0)
-                            multi_costs[key]["Custo Total Final"] = multi_costs[key]["Custo Total"] + total_product_taxes
-                            if "Custo Unitário" in multi_costs[key]:
-                                multi_costs[key]["Custo Unitário Final"] = multi_costs[key]["Custo Unitário"] + (total_product_taxes/quantidade if quantidade > 0 else 0)
-                    else:
-                        for key in multi_costs:
-                            multi_costs[key]["Custo Total Final"] = multi_costs[key]["Custo Total"]
-                            if "Custo Unitário" in multi_costs[key]:
-                                multi_costs[key]["Custo Unitário Final"] = multi_costs[key]["Custo Unitário"]
-                    
-                    df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo Total Final")
+                            multi_costs[key]["Custo Final"] = multi_costs[key]["Custo Final"]  # já calculado acima
+                            if "Custo Unitário Final" in multi_costs[key]:
+                                pass  # já definido
+                    df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo Final")
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
-                    st.write("### Comparação Global (Multifilial)")
+                    st.write("### Comparação global (multifilial)")
                     st.dataframe(df_display)
-                    chart_data = df_multi.reset_index()
-                    chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
-                    chart = alt.Chart(chart_data).mark_bar().encode(
-                        x=alt.X('Custo Total Final:Q', title='Custo Total Final (R$)'),
-                        y=alt.Y('Filial_Cenario:N', title='Filial | Cenário', sort='-x'),
-                        tooltip=['Filial_Cenario', 'Custo Total Final']
-                    ).properties(title="Comparativo Multifilial", width=700, height=400)
-                    st.altair_chart(chart, use_container_width=True)
+                 #   chart_data = df_multi.reset_index()
+                 #   chart_data["Filial_Cenario"] = chart_data["Filial"] + " | " + chart_data["Cenário"]
+                 #   chart = alt.Chart(chart_data).mark_bar().encode(
+                  #      x=alt.X('Custo Final:Q', title='Custo Final (R$)'),
+                  #      y=alt.Y('Filial_Cenario:N', title='Filial | Cenário', sort='-x'),
+                 #       tooltip=['Filial_Cenario', 'Custo Final']
+                  #  ).properties(title="Comparativo Multifilial", width=700, height=400)
+                  #  st.altair_chart(chart, use_container_width=True)
                     best_row = df_multi.iloc[0]
                     best_filial = best_row["Filial"]
                     best_scenario = best_row["Cenário"]
-                    best_cost = best_row["Custo Total Final"]
+                    best_cost = best_row["Custo Final"]
                     st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo final de **R$ {format_brl(best_cost)}**.")
                     
                     if st.button("Salvar Comparação no Histórico"):
                         history = load_history()
-                        processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
+                        #processo_nome_multi = st.text_input("Nome do Processo para Comparação", key="proc_multi")
                         simulation_record = {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "processo_nome": processo_nome_multi,
+                            "processo_nome": processo_nome,
                             "multi_comparison": True,
                             "filiais_multi": filiais_multi,
                             "modo_valor_fob": modo_valor_fob,
@@ -794,7 +942,7 @@ elif module_selected == "Simulador de Cenários":
                         df_multi.index = df_multi.index.map(lambda x: " | ".join(map(str, x)) if isinstance(x, tuple) else str(x))
                         simulation_record["results"] = df_multi.to_dict(orient="index")
                         if product:
-                            simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao","")}
+                            simulation_record["produto"] = {"ncm": product_key, "descricao": product.get("descricao", "")}
                             simulation_record["product_taxes"] = product_taxes
                         simulation_record["final_cost_com_impostos"] = best_cost
                         history.append(simulation_record)
@@ -804,6 +952,8 @@ elif module_selected == "Simulador de Cenários":
                     st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
             else:
                 st.info("Selecione pelo menos uma filial para comparar.")
+
+
                 
 # ============================
 # MÓDULO: HISTÓRICO DE SIMULAÇÕES
@@ -821,14 +971,14 @@ elif module_selected == "Histórico de Simulações":
         st.markdown("### Registros de Simulação")
         
         for record in sorted_history:
-            # Monta o título do expander
+            # Monta o título do expander usando os campos atualizados
             expander_title = f"{record['timestamp']}"
             if "best_scenario" in record:
                 expander_title += f" | Melhor: {record['best_scenario']}"
             if "best_cost" in record:
-                expander_title += f" | Custo: R$ {format_brl(record['best_cost'])}"
+                expander_title += f" | Custo Final: R$ {format_brl(record['best_cost'])}"
             
-            # Indica se é uma comparação multifilial
+            # Indica se é uma comparação multifilial ou simulação única
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação Multifilial)"
             else:
@@ -838,21 +988,17 @@ elif module_selected == "Histórico de Simulações":
                 st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
                 st.write(f"**Data/Hora:** {record['timestamp']}")
                 
-                # Se for comparação multifilial, exibe as informações específicas
+                # Se for comparação multifilial
                 if record.get("multi_comparison", False):
                     filiais = record.get("filiais_multi", [])
                     if filiais:
-                        # Exibe as filiais separadas por vírgula
                         st.write("**Filiais Selecionadas:** " + ", ".join(filiais))
-                    
                     st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
                     st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
-                    st.write("**Melhor Custo:** R$", format_brl(record.get("best_cost", 0.0)))
-                    st.write("**Valor CIF:** R$", format_brl(record.get("valor_cif", 0.0)))
-                    st.write("**Taxas Frete BRL Rateada:** R$", format_brl(record.get("taxas_frete_brl_rateada", 0.0)))
-                    st.write("**Seguro (0,15% Valor FOB):** R$", format_brl(record.get("seguro_0_15_valor_fob", 0.0)))
+                    st.write("**Custo Final:** R$", format_brl(record.get("best_cost", 0.0)))
+                    st.write("**Valor CIF com Seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
                     
-                    # Exibe o DataFrame com os resultados, caso existam
+                    # Exibe o DataFrame com os resultados atualizados
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame.from_dict(results_dict, orient="index")
@@ -861,38 +1007,28 @@ elif module_selected == "Histórico de Simulações":
                         )
                         st.dataframe(results_df_display)
                 
-                # Se for simulação única, exibe as informações específicas
+                # Se for simulação única
                 else:
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
                     st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
-                    st.write(f"**Custo Total:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    st.write(f"**Custo Final:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
+                    st.write("**Valor CIF com Seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
                     
-                    # Exibe o DataFrame com os resultados, caso existam
                     results_dict = record.get("results", {})
                     if results_dict:
+                        # Note que para simulação única, os resultados foram armazenados com as chaves definidas
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(
                             lambda x: format_brl(x) if isinstance(x, (int, float)) else x
                         )
                         st.dataframe(results_df_display)
                 
-                # Botão para excluir o registro do histórico
-                #if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                    #history.remove(record)
-                    #save_history(history)
-                    #st.success("Registro excluído com sucesso!")
-                    #st.experimental_rerun()
-          # Botão para excluir este registro
+                # Botão para excluir este registro
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                    # 2. Remove do session_state
                     sorted_history.remove(record)  
-                    # Se preferir remover direto de st.session_state.history, cuidado para não quebrar o "for"
                     st.session_state.history = sorted_history
                     save_history(st.session_state.history)
                     st.success("Registro excluído com sucesso!")
-                    #st.experimental_rerun()
-
-
-    
     else:
         st.info("Nenhuma simulação registrada no histórico.")
