@@ -79,6 +79,26 @@ st.write(f"Módulo selecionado: {module_selected}")
 
 #---------continua daqui-------#
 
+# -----------------------------
+# Nome do arquivo que armazenará as configurações de frete
+# -----------------------------
+
+# 
+FRETE_CONFIG_FILE = "fretes_config.json"
+
+def load_frete_config():
+    if os.path.exists(FRETE_CONFIG_FILE):
+        with open(FRETE_CONFIG_FILE, "r") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def save_frete_config(config):
+    with open(FRETE_CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
 # ============================
 # Juicy CSS Styling
 # ============================
@@ -265,7 +285,7 @@ products = load_products()
 if module_selected == "Gerenciamento":
     st.header("Gerenciamento de Configurações")
     # Cria as abas: Filiais, Cenários, Campos de Custo e Produtos
-    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo", "Produtos"])
+    management_tabs = st.tabs(["Filiais", "Cenários", "Campos de Custo", "Produtos", "Fretes"])
     
     # --- Aba 1: Gerenciamento de Filiais ---
     with management_tabs[0]:
@@ -592,6 +612,50 @@ if module_selected == "Gerenciamento":
             st.markdown('<script>window.location.hash = "product_form";</script>', unsafe_allow_html=True)
         
         st.markdown("---")
+
+
+        # --- Aba 5: Gerenciamento de fretes ---
+           
+        with management_tabs[4]:
+                st.subheader("Configuração de Fretes por Origem")
+                
+                # Carrega a configuração de fretes
+                frete_config = load_frete_config()
+                
+                # Se não houver configuração, define valores padrão
+                if not frete_config:
+                    frete_config = {
+                        "India": {"frete_internacional_usd": 100.0, "taxas_frete_brl": 50.0},
+                        "China": {"frete_internacional_usd": 80.0, "taxas_frete_brl": 40.0},
+                        "Portugal": {"frete_internacional_usd": 150.0, "taxas_frete_brl": 70.0},
+                        "Alemanha": {"frete_internacional_usd": 120.0, "taxas_frete_brl": 60.0}
+                    }
+                
+                # Permite a edição dos valores para cada origem
+                for origem, valores in frete_config.items():
+                    st.write(f"**Origem:** {origem}")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        novo_frete = st.number_input(
+                            f"Frete Internacional (USD) para {origem}",
+                            min_value=0.0,
+                            value=valores.get("frete_internacional_usd", 0.0),
+                            key=f"frete_{origem}"
+                        )
+                    with col2:
+                        nova_taxa = st.number_input(
+                            f"Taxas de Frete (BRL) para {origem}",
+                            min_value=0.0,
+                            value=valores.get("taxas_frete_brl", 0.0),
+                            key=f"taxa_{origem}"
+                        )
+                    frete_config[origem]["frete_internacional_usd"] = novo_frete
+                    frete_config[origem]["taxas_frete_brl"] = nova_taxa
+                
+                if st.button("Salvar Configurações de Frete"):
+                    save_frete_config(frete_config)
+                    st.success("Configurações de frete salvas com sucesso!")
+
         
         # ============================
         # Ferramenta de Busca e Listagem de Produtos (Parte Inferior)
