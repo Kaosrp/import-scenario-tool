@@ -832,9 +832,9 @@ elif module_selected == "Simulador de Cenários":
     # MODO: COMPARAÇÃO MULTIFILIAL
 elif sim_mode == "Comparação Multifilial":
            st.subheader("Comparação Multifilial")
-        if not data:
+    if not data:
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")        
-        else:
+    else:
             st.subheader("Comparação Multifilial")
             if not data:
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
