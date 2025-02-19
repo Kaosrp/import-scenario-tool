@@ -594,18 +594,18 @@ elif module_selected == "Simulador de Cenários":
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
     # Para não administradores: seleção por origem
-    if st.session_state.user_role != "Administrador":
-        frete_config = load_frete_config()
-        origem = st.selectbox("Selecione a Origem", list(frete_config.keys()), key="sim_nonadmin_origem")
-        frete_internacional_usd = frete_config[origem]["frete_internacional_usd"]
-        taxas_frete_brl = frete_config[origem]["taxas_frete_brl"]
-        st.write(f"Valores pré-configurados para {origem}:")
-        st.write(f"- Frete Internacional (USD): {frete_internacional_usd}")
-        st.write(f"- Taxas de Frete (BRL): {taxas_frete_brl}")
-    else:
-        # Administradores definem manualmente (keys únicos)
-        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_admin_frete_internacional")
-        taxas_frete_brl = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=0.0, key="sim_admin_taxas_frete")
+    #if st.session_state.user_role != "Administrador":
+    #    frete_config = load_frete_config()
+    #    origem = st.selectbox("Selecione a Origem", list(frete_config.keys()), key="sim_nonadmin_origem")
+    #    frete_internacional_usd = frete_config[origem]["frete_internacional_usd"]
+    #    taxas_frete_brl = frete_config[origem]["taxas_frete_brl"]
+    #    st.write(f"Valores pré-configurados para {origem}:")
+    #    st.write(f"- Frete Internacional (USD): {frete_internacional_usd}")
+    #    st.write(f"- Taxas de Frete (BRL): {taxas_frete_brl}")
+    #else:
+    #    # Administradores definem manualmente (keys únicos)
+    #    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_admin_frete_internacional")
+    #    taxas_frete_brl = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=0.0, key="sim_admin_taxas_frete")
     
     # Seleção de produto (mesmo para ambos)
     if products:
@@ -647,7 +647,21 @@ elif module_selected == "Simulador de Cenários":
                     valor_fob_usd = valor_unit_fob_usd * quantidade
                 with col2:
                     st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
-            
+        
+    # Para não administradores: seleção por origem
+    if st.session_state.user_role != "Administrador":
+        frete_config = load_frete_config()
+        origem = st.selectbox("Selecione a Origem", list(frete_config.keys()), key="sim_nonadmin_origem")
+        frete_internacional_usd = frete_config[origem]["frete_internacional_usd"]
+        taxas_frete_brl = frete_config[origem]["taxas_frete_brl"]
+        st.write(f"Valores pré-configurados para {origem}:")
+        st.write(f"- Frete Internacional (USD): {frete_internacional_usd}")
+        st.write(f"- Taxas de Frete (BRL): {taxas_frete_brl}")
+    else:
+        # Administradores definem manualmente (keys únicos)
+        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_admin_frete_internacional")
+        taxas_frete_brl = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=0.0, key="sim_admin_taxas_frete")    
+                  
             percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0, key="sim_uni_percentual_ocupacao")
             occupancy_fraction = percentual_ocupacao_conteiner / 100.0
             frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
