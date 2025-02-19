@@ -556,9 +556,10 @@ if module_selected == "Gerenciamento":
                 st.success("Produto salvo com sucesso!")
                 # Caso prefira uma alternativa visual ao st.balloons(), descomente a linha abaixo:
                 st.info("Operação concluída com sucesso!")
+                st.balloons()
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
-                st.experimental_rerun()
+                #st.experimental_rerun()
 
 
 # ============================
