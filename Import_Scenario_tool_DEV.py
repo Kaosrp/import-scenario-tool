@@ -391,7 +391,7 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
     
-      # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+          # --- Aba 4: Gerenciamento de Produtos (NCM) ---
     with management_tabs[3]:
         st.subheader("Gerenciamento de Produtos (NCM)")
         st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
@@ -463,20 +463,16 @@ if module_selected == "Gerenciamento":
                 "Alíquota (%)",
                 min_value=0.0,
                 value=prod_data.get("imposto_importacao", {}).get("rate", 0.0) * 100,
-                step=0.1
+                step=0.1,
+                key="ii_rate"
             )
         with col_ii[1]:
             ii_base = st.selectbox(
                 "Base",
                 ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=0,
-                key="ii_base"
-            ) if not prod_data.get("imposto_importacao") else st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
                 index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
                     prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")
-                ),
+                ) if prod_data.get("imposto_importacao") else 0,
                 key="ii_base"
             )
     
@@ -488,20 +484,16 @@ if module_selected == "Gerenciamento":
                 "Alíquota (%)",
                 min_value=0.0,
                 value=prod_data.get("ipi", {}).get("rate", 0.0) * 100,
-                step=0.1
+                step=0.1,
+                key="ipi_rate"
             )
         with col_ipi[1]:
             ipi_base = st.selectbox(
                 "Base",
                 ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=0,
-                key="ipi_base"
-            ) if not prod_data.get("ipi") else st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
                 index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
                     prod_data.get("ipi", {}).get("base", "Valor CIF")
-                ),
+                ) if prod_data.get("ipi") else 0,
                 key="ipi_base"
             )
     
@@ -513,20 +505,16 @@ if module_selected == "Gerenciamento":
                 "Alíquota (%)",
                 min_value=0.0,
                 value=prod_data.get("pis", {}).get("rate", 0.0) * 100,
-                step=0.1
+                step=0.1,
+                key="pis_rate"
             )
         with col_pis[1]:
             pis_base = st.selectbox(
                 "Base",
                 ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=0,
-                key="pis_base"
-            ) if not prod_data.get("pis") else st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
                 index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
                     prod_data.get("pis", {}).get("base", "Valor CIF")
-                ),
+                ) if prod_data.get("pis") else 0,
                 key="pis_base"
             )
     
@@ -538,20 +526,16 @@ if module_selected == "Gerenciamento":
                 "Alíquota (%)",
                 min_value=0.0,
                 value=prod_data.get("cofins", {}).get("rate", 0.0) * 100,
-                step=0.1
+                step=0.1,
+                key="cofins_rate"
             )
         with col_cofins[1]:
             cofins_base = st.selectbox(
                 "Base",
                 ["Valor CIF", "Valor FOB", "Frete Internacional"],
-                index=0,
-                key="cofins_base"
-            ) if not prod_data.get("cofins") else st.selectbox(
-                "Base",
-                ["Valor CIF", "Valor FOB", "Frete Internacional"],
                 index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(
                     prod_data.get("cofins", {}).get("base", "Valor CIF")
-                ),
+                ) if prod_data.get("cofins") else 0,
                 key="cofins_base"
             )
     
@@ -570,11 +554,12 @@ if module_selected == "Gerenciamento":
                 products[ncm_input.strip()] = product_record
                 save_products(products)
                 st.success("Produto salvo com sucesso!")
-                # Alternativa ao st.balloons(): você pode, por exemplo, exibir uma mensagem informativa ou animação customizada.
-                # st.info("Operação concluída com sucesso!")
+                # Caso prefira uma alternativa visual ao st.balloons(), descomente a linha abaixo:
+                st.info("Operação concluída com sucesso!")
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
                 st.experimental_rerun()
+
 
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
