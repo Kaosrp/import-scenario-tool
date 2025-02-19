@@ -556,12 +556,12 @@ if module_selected == "Gerenciamento":
                     with col2:
                         if st.button("Editar", key=f"edit_{ncm}"):
                             st.session_state.edit_product = ncm
-                            st.experimental_rerun()
+                            #st.experimental_rerun()
                         if st.button("Excluir", key=f"del_{ncm}"):
                             del products[ncm]
                             save_products(products)
                             st.success(f"Produto {ncm} excluído!")
-                            st.experimental_rerun()
+                            #st.experimental_rerun()
             else:
                 st.info("Nenhum produto encontrado para a busca.")
         else:
