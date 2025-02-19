@@ -391,15 +391,28 @@ if module_selected == "Gerenciamento":
                             st.success("Campo adicionado com sucesso!")
                             st.info("Recarregue a página para ver as alterações.")
     
-    # --- Aba 4: Gerenciamento de Produtos (NCM) ---
-    with management_tabs[3]:
-        st.subheader("Gerenciamento de Produtos (NCM)")
-        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
-        # Exibição dos produtos cadastrados
-        if products:
-            st.markdown("### Produtos Cadastrados:")
-            for ncm in list(products.keys()):
-                prod = products[ncm]
+  # --- Aba 4: Gerenciamento de Produtos (NCM) ---
+with management_tabs[3]:
+    st.subheader("Gerenciamento de Produtos (NCM)")
+    st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+    
+    # Campo de busca para filtrar produtos
+    search_query = st.text_input("Buscar Produto", key="search_produto")
+    
+    # Exibição dos produtos cadastrados
+    if products:
+        st.markdown("### Produtos Cadastrados:")
+        # Filtra os produtos com base na busca
+        if search_query:
+            filtered_products = {ncm: prod for ncm, prod in products.items() 
+                                 if search_query.lower() in ncm.lower() 
+                                 or search_query.lower() in prod.get("descricao", "").lower()}
+        else:
+            filtered_products = products
+
+        if filtered_products:
+            for ncm in list(filtered_products.keys()):
+                prod = filtered_products[ncm]
                 col1, col2, col3 = st.columns([3, 3, 1])
                 with col1:
                     st.write(f"**NCM:** {ncm}  \n **Descrição:** {prod.get('descricao','')}")
@@ -417,45 +430,53 @@ if module_selected == "Gerenciamento":
                         st.success(f"Produto {ncm} excluído!")
                         st.experimental_rerun()
         else:
-            st.info("Nenhum produto cadastrado.")
-        
-        st.markdown("---")
-        # Verifica se está em modo de edição
-        edit_mode = st.session_state.get("edit_product", None)
-        if edit_mode:
-            st.subheader(f"Editar Produto (NCM: {edit_mode})")
-            prod_data = products.get(edit_mode, {})
-        else:
-            st.subheader("Adicionar Novo Produto")
-            prod_data = {}
-        ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "")
-        descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""))
-        st.markdown("#### Alíquotas de Impostos (valores em %)")
-        ii_rate = st.number_input("Imposto de Importação (II)", min_value=0.0, value=prod_data.get("imposto_importacao", {}).get("rate", 0.0)*100, step=0.1)
-        ii_base = st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ii_base") if not prod_data.get("imposto_importacao") else st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")), key="ii_base")
-        ipi_rate = st.number_input("IPI", min_value=0.0, value=prod_data.get("ipi", {}).get("rate", 0.0)*100, step=0.1)
-        ipi_base = st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ipi_base") if not prod_data.get("ipi") else st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("ipi", {}).get("base", "Valor CIF")), key="ipi_base")
-        pis_rate = st.number_input("Pis", min_value=0.0, value=prod_data.get("pis", {}).get("rate", 0.0)*100, step=0.1)
-        pis_base = st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="pis_base") if not prod_data.get("pis") else st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("pis", {}).get("base", "Valor CIF")), key="pis_base")
-        cofins_rate = st.number_input("Cofins", min_value=0.0, value=prod_data.get("cofins", {}).get("rate", 0.0)*100, step=0.1)
-        cofins_base = st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="cofins_base") if not prod_data.get("cofins") else st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("cofins", {}).get("base", "Valor CIF")), key="cofins_base")
-        if st.button("Salvar Produto"):
-            if not ncm_input.strip():
-                st.warning("Informe o NCM.")
+            if search_query:
+                st.info("Nenhum produto encontrado para a busca.")
             else:
-                product_record = {
-                    "descricao": descricao,
-                    "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
-                    "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
-                    "pis": {"rate": pis_rate/100.0, "base": pis_base},
-                    "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
-                }
-                products[ncm_input.strip()] = product_record
-                save_products(products)
-                st.success("Produto salvo com sucesso!")
-                if "edit_product" in st.session_state:
-                    del st.session_state.edit_product
-                #st.experimental_rerun()
+                st.info("Nenhum produto cadastrado.")
+    else:
+        st.info("Nenhum produto cadastrado.")
+    
+    st.markdown("---")
+    # Verifica se está em modo de edição
+    edit_mode = st.session_state.get("edit_product", None)
+    if edit_mode:
+        st.subheader(f"Editar Produto (NCM: {edit_mode})")
+        prod_data = products.get(edit_mode, {})
+    else:
+        st.subheader("Adicionar Novo Produto")
+        prod_data = {}
+    ncm_input = st.text_input("NCM", value=edit_mode if edit_mode else "")
+    descricao = st.text_input("Descrição", value=prod_data.get("descricao", ""))
+    st.markdown("#### Alíquotas de Impostos (valores em %)")
+    ii_rate = st.number_input("Imposto de Importação (II)", min_value=0.0, value=prod_data.get("imposto_importacao", {}).get("rate", 0.0)*100, step=0.1)
+    ii_base = st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ii_base") if not prod_data.get("imposto_importacao") else st.selectbox("Base para II", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("imposto_importacao", {}).get("base", "Valor CIF")), key="ii_base")
+    ipi_rate = st.number_input("IPI", min_value=0.0, value=prod_data.get("ipi", {}).get("rate", 0.0)*100, step=0.1)
+    ipi_base = st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="ipi_base") if not prod_data.get("ipi") else st.selectbox("Base para IPI", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("ipi", {}).get("base", "Valor CIF")), key="ipi_base")
+    pis_rate = st.number_input("Pis", min_value=0.0, value=prod_data.get("pis", {}).get("rate", 0.0)*100, step=0.1)
+    pis_base = st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="pis_base") if not prod_data.get("pis") else st.selectbox("Base para Pis", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("pis", {}).get("base", "Valor CIF")), key="pis_base")
+    cofins_rate = st.number_input("Cofins", min_value=0.0, value=prod_data.get("cofins", {}).get("rate", 0.0)*100, step=0.1)
+    cofins_base = st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=0, key="cofins_base") if not prod_data.get("cofins") else st.selectbox("Base para Cofins", ["Valor CIF", "Valor FOB", "Frete Internacional"], index=["Valor CIF", "Valor FOB", "Frete Internacional"].index(prod_data.get("cofins", {}).get("base", "Valor CIF")), key="cofins_base")
+    
+    if st.button("Salvar Produto"):
+        if not ncm_input.strip():
+            st.warning("Informe o NCM.")
+        else:
+            product_record = {
+                "descricao": descricao,
+                "imposto_importacao": {"rate": ii_rate/100.0, "base": ii_base},
+                "ipi": {"rate": ipi_rate/100.0, "base": ipi_base},
+                "pis": {"rate": pis_rate/100.0, "base": pis_base},
+                "cofins": {"rate": cofins_rate/100.0, "base": cofins_base}
+            }
+            products[ncm_input.strip()] = product_record
+            save_products(products)
+            st.success("Produto salvo com sucesso!")
+            st.balloons()  # Feedback visual adicional
+            if "edit_product" in st.session_state:
+                del st.session_state.edit_product
+            #st.experimental_rerun()
+
 
 
 # ============================
