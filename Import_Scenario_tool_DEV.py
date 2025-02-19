@@ -590,10 +590,15 @@ if module_selected == "Gerenciamento":
 # ============================
 elif module_selected == "Simulador de Cenários":
     st.header("DEV - Simulador de Cenários de Importação")
-    sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0, key="sim_mode")
+    sim_mode = st.radio(
+        "Escolha o modo de Simulação",
+        ["Simulador Único", "Comparação Multifilial"],
+        index=0,
+        key="sim_mode"
+    )
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
-    # Seleção de produto (mesmo para ambos)
+    # Seleção de produto (válida para ambos os modos)
     if products:
         options = []
         mapping = {}
@@ -607,34 +612,53 @@ elif module_selected == "Simulador de Cenários":
     else:
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
-        
+
+    # Modo Simulador Único
     if sim_mode == "Simulador Único":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()), key="sim_uni_filial")
-            modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"], key="sim_uni_modo_valor_fob")
+            modo_valor_fob = st.selectbox(
+                "Como deseja informar o Valor FOB?",
+                ["Valor Total", "Unitário × Quantidade"],
+                key="sim_uni_modo_valor_fob"
+            )
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
                 with col1:
-                    valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0, key="sim_uni_valor_fob_total")
+                    valor_fob_usd = st.number_input(
+                        "Valor FOB da Mercadoria (USD)",
+                        min_value=0.0, value=0.0,
+                        key="sim_uni_valor_fob_total"
+                    )
                     quantidade = 1.0
                     valor_unit_fob_usd = 0.0
                 with col2:
-                    if st.session_state.user_role == "Administrador":
-                        st.write(f"Frete Internacional (USD): {frete_internacional_usd}")
-                    else:
-                        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_uni_frete_internacional_total")
+                    st.write("Utilize a seção abaixo para definir Frete e Taxas.")
             else:
                 with col1:
-                    valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0, key="sim_uni_valor_unitario")
-                    quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0, key="sim_uni_quantidade")
-                    frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_uni_frete_internacional_unit")
+                    valor_unit_fob_usd = st.number_input(
+                        "Valor Unitário FOB (USD/unidade)",
+                        min_value=0.0, value=0.0,
+                        key="sim_uni_valor_unitario"
+                    )
+                    quantidade = st.number_input(
+                        "Quantidade",
+                        min_value=0.0, value=0.0,
+                        key="sim_uni_quantidade"
+                    )
+                    # Aqui, no modo unitário, o frete é informado diretamente:
+                    frete_internacional_usd = st.number_input(
+                        "Frete Internacional (USD)",
+                        min_value=0.0, value=0.0,
+                        key="sim_uni_frete_internacional_unit"
+                    )
                     valor_fob_usd = valor_unit_fob_usd * quantidade
                 with col2:
                     st.write(f"Valor FOB (USD) calculado: **{valor_fob_usd:,.2f}**")
     
-    # Bloco para definição de valores de frete e taxas
+    # Bloco unificado para definição de Frete e Taxas
     if st.session_state.user_role != "Administrador":
         frete_config = load_frete_config()
         origem = st.selectbox("Selecione a Origem", list(frete_config.keys()), key="sim_nonadmin_origem")
@@ -644,18 +668,39 @@ elif module_selected == "Simulador de Cenários":
         st.write(f"- Frete Internacional (USD): {frete_internacional_usd}")
         st.write(f"- Taxas de Frete (BRL): {taxas_frete_brl}")
     else:
-        frete_internacional_usd = st.number_input("Frete Internacional (USD)", min_value=0.0, value=0.0, key="sim_admin_frete_internacional")
-        taxas_frete_brl = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=0.0, key="sim_admin_taxas_frete")
+        frete_internacional_usd = st.number_input(
+            "Frete Internacional (USD)",
+            min_value=0.0, value=0.0,
+            key="sim_admin_frete_internacional"
+        )
+        taxas_frete_brl = st.number_input(
+            "Taxas de Frete (BRL)",
+            min_value=0.0, value=0.0,
+            key="sim_admin_taxas_frete"
+        )
     
-    percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0, key="sim_uni_percentual_ocupacao")
+    # Demais parâmetros para ambos os modos
+    percentual_ocupacao_conteiner = st.number_input(
+        "Percentual de Ocupação do Contêiner (%)",
+        min_value=0.0, max_value=100.0, value=100.0,
+        key="sim_uni_percentual_ocupacao"
+    )
     occupancy_fraction = percentual_ocupacao_conteiner / 100.0
     frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
     if st.session_state.user_role == "Administrador":
         taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
     else:
-        taxas_frete_brl_input = st.number_input("Taxas do Frete (BRL)", min_value=0.0, value=0.0, key="sim_uni_taxas_frete")
+        taxas_frete_brl_input = st.number_input(
+            "Taxas do Frete (BRL)",
+            min_value=0.0, value=0.0,
+            key="sim_uni_taxas_frete"
+        )
         taxas_frete_brl_rateada = taxas_frete_brl_input * occupancy_fraction
-    taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0, key="sim_uni_taxa_cambio")
+    taxa_cambio = st.number_input(
+        "Taxa de Câmbio (USD -> BRL)",
+        min_value=0.0, value=5.0,
+        key="sim_uni_taxa_cambio"
+    )
     
     valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
     seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
@@ -727,7 +772,6 @@ elif module_selected == "Simulador de Cenários":
                     costs[scenario][field] = field_val
                 else:
                     costs[scenario][field] = conf
-        
         st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
         st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
     
@@ -781,11 +825,11 @@ elif module_selected == "Simulador de Cenários":
             history.append(simulation_record)
             save_history(history)
             st.success("Simulação salva no histórico com sucesso!")
-        else:
-            st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-         
     else:
-        # MODO: COMPARAÇÃO MULTIFILIAL
+        st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
+         
+    # MODO: COMPARAÇÃO MULTIFILIAL
+    else:
         st.subheader("Comparação Multifilial")
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
@@ -947,7 +991,8 @@ elif module_selected == "Simulador de Cenários":
                     st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
             else:
                 st.info("Selecione pelo menos uma filial para comparar.")
-                
+            
+              
 # ============================
 # MÓDULO: HISTÓRICO DE SIMULAÇÕES
 # ============================
