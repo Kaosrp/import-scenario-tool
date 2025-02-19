@@ -35,7 +35,7 @@ if not st.session_state.authenticated:
             st.session_state.authenticated = True
             st.session_state.user_role = USUARIOS[username]["role"]
             st.success("Login efetuado com sucesso!")
-            st.experimental_rerun()
+            #st.experimental_rerun()
         else:
             st.error("Usuário ou senha incorretos!")
     st.stop()  # Não executa o restante sem autenticação
@@ -60,7 +60,7 @@ if st.session_state.user_role == "Administrador":
 if st.sidebar.button("Sair", key="sidebar_logout"):
     st.session_state.authenticated = False
     st.session_state.user_role = None
-    st.experimental_rerun()
+    #st.experimental_rerun()
 
 # -----------------------------
 # Controle de acesso ao módulo Gerenciamento
