@@ -994,7 +994,7 @@ elif module_selected == "Simulador de Cenários":
                             st.success("Comparação Multifilial salva no histórico com sucesso!")
                     else:
                         st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-                else:
+                    else:
                     st.info("Selecione pelo menos uma filial para comparar.")
                     
     # MÓDULO: HISTÓRICO DE SIMULAÇÕES
