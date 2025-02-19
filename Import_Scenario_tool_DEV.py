@@ -471,7 +471,8 @@ if module_selected == "Gerenciamento":
                 }
                 products[ncm_input.strip()] = product_record
                 save_products(products)
-                st.success("Produto salvo com sucesso!")
+                #st.success("Produto salvo com sucesso!")
+                st.spinner("Produto salvo")
                 st.balloons()  # Feedback visual adicional
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
