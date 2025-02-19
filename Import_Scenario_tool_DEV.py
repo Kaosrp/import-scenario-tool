@@ -46,16 +46,16 @@ if not st.session_state.authenticated:
 # -----------------------------
 st.sidebar.markdown("### Selecione o Módulo:")
 
-# Apenas Administrador pode acessar o módulo de Gerenciamento
-if st.session_state.user_role == "Administrador":
-    if st.sidebar.button("Gerenciamento"):
-        st.session_state.module = "Gerenciamento"
-
 # Módulos disponíveis para ambos os tipos de usuário
 if st.sidebar.button("Simulador de Cenários"):
     st.session_state.module = "Simulador de Cenários"
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
+
+# Apenas Administrador pode acessar o módulo de Gerenciamento
+if st.session_state.user_role == "Administrador":
+    if st.sidebar.button("Gerenciamento"):
+        st.session_state.module = "Gerenciamento"
 
 # Botão de logout
 if st.sidebar.button("Sair"):
