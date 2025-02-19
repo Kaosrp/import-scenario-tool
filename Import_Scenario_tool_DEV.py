@@ -588,7 +588,7 @@ if module_selected == "Gerenciamento":
     # ============================
     # MÓDULO: SIMULADOR DE CENÁRIOS
     # ============================
-    elif module_selected == "Simulador de Cenários":
+elif module_selected == "Simulador de Cenários":
         st.header("DEV - Simulador de Cenários de Importação")
         sim_mode = st.radio(
             "Escolha o modo de Simulação",
