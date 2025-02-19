@@ -430,7 +430,7 @@ if module_selected == "Gerenciamento":
                             del products[ncm]
                             save_products(products)
                             st.success(f"Produto {ncm} excluído!")
-                            st.experimental_rerun()
+                            #st.experimental_rerun()
             else:
                 if search_query:
                     st.info("Nenhum produto encontrado para a busca.")
