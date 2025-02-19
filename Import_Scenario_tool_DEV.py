@@ -176,7 +176,7 @@ if st.sidebar.button("Gerenciamento"):
 if st.sidebar.button("Histórico de Simulações"):
     st.session_state.module = "Histórico de Simulações"
 
-module_selected = st.session_state.module
+#module_selected = st.session_state.module
 #st.sidebar.markdown(f"### Módulo Atual: **{module_selected}**")
 
 # ============================
