@@ -517,10 +517,11 @@ if module_selected == "Gerenciamento":
                 products[ncm_input.strip()] = product_record
                 save_products(products)
                 st.success("Produto salvo com sucesso!")
+                st.balloons()
                 st.info("Operação concluída com sucesso!")
                 if "edit_product" in st.session_state:
                     del st.session_state.edit_product
-                st.experimental_rerun()
+                #st.experimental_rerun()
         
         # Se estiver em modo de edição, injeta um script para rolar até o formulário
         if st.session_state.get("edit_product", None):
