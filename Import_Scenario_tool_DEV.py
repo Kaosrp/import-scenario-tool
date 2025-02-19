@@ -828,14 +828,15 @@ elif module_selected == "Simulador de Cenários":
             st.success("Simulação salva no histórico com sucesso!")
         else:
             st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
-         
+    
     # MODO: COMPARAÇÃO MULTIFILIAL
     elif sim_mode == "Comparação Multifilial":
-           st.subheader("Comparação Multifilial")
+        st.subheader("Comparação Multifilial")
         if not data:
                 st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")        
-                filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()), key="multi_filiais")
-                if filiais_multi:
+        else:  
+            filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()), key="multi_filiais")
+            if filiais_multi:
                     st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
                     modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"], key="multi_modo_valor_fob")
                     col1, col2 = st.columns(2)
