@@ -392,7 +392,7 @@ if module_selected == "Gerenciamento":
                             st.info("Recarregue a página para ver as alterações.")
     
           # --- Aba 4: Gerenciamento de Produtos (NCM) ---
-with management_tabs[3]:
+    with management_tabs[3]:
     st.subheader("Gerenciamento de Produtos (NCM)")
     st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
 
@@ -400,7 +400,7 @@ with management_tabs[3]:
     search_query = st.text_input("Buscar Produto", key="search_produto")
 
     # Exibição dos produtos cadastrados
-    if products:
+        if products:
         st.markdown("### Produtos Cadastrados:")
         # Filtra os produtos com base na busca
         if search_query:
@@ -409,14 +409,14 @@ with management_tabs[3]:
                 for ncm, prod in products.items()
                 if search_query.lower() in ncm.lower() or search_query.lower() in prod.get("descricao", "").lower()
             }
-        else:
+            else:
             filtered_products = products
 
-        if filtered_products:
+                if filtered_products:
             # Exibe cada produto em um "card" estilizado
-            for ncm, prod in filtered_products.items():
+                for ncm, prod in filtered_products.items():
                 col1, col2 = st.columns([7, 3])
-                with col1:
+                    with col1:
                     product_html = f"""
                     <div style="
                         border: 1px solid #e0e0e0; 
@@ -434,21 +434,21 @@ with management_tabs[3]:
                     </div>
                     """
                     st.markdown(product_html, unsafe_allow_html=True)
-                with col2:
-                    if st.button("Editar", key=f"edit_{ncm}"):
+                    with col2:
+                        if st.button("Editar", key=f"edit_{ncm}"):
                         st.session_state.edit_product = ncm
-                    if st.button("Excluir", key=f"del_{ncm}"):
-                        del products[ncm]
+                        if st.button("Excluir", key=f"del_{ncm}"):
+                            del products[ncm]
                         save_products(products)
                         st.success(f"Produto {ncm} excluído!")
                         st.experimental_rerun()
-        else:
-            if search_query:
-                st.info("Nenhum produto encontrado para a busca.")
             else:
-                st.info("Nenhum produto cadastrado.")
-    else:
-        st.info("Nenhum produto cadastrado.")
+                if search_query:
+                    st.info("Nenhum produto encontrado para a busca.")
+                else:
+                    st.info("Nenhum produto cadastrado.")
+        else:
+            st.info("Nenhum produto cadastrado.")
 
 
 # ============================
