@@ -584,6 +584,46 @@ if module_selected == "Gerenciamento":
                 st.info("Nenhum produto encontrado para a busca.")
         else:
             st.info("Nenhum produto cadastrado.")
+#---------Aba de gerenciamento de fretes--------
+    with management_tabs[4]:
+        st.subheader("Configuração de Fretes por Origem")
+        
+        # Carrega a configuração de fretes
+        frete_config = load_frete_config()
+        
+        # Se não houver configuração, define valores padrão
+        if not frete_config:
+            frete_config = {
+                "India": {"frete_internacional_usd": 100.0, "taxas_frete_brl": 50.0},
+                "China": {"frete_internacional_usd": 80.0, "taxas_frete_brl": 40.0},
+                "Portugal": {"frete_internacional_usd": 150.0, "taxas_frete_brl": 70.0},
+                "Alemanha": {"frete_internacional_usd": 120.0, "taxas_frete_brl": 60.0}
+            }
+        
+        # Permite a edição dos valores para cada origem
+        for origem, valores in frete_config.items():
+            st.write(f"**Origem:** {origem}")
+            col1, col2 = st.columns(2)
+            with col1:
+                novo_frete = st.number_input(
+                    f"Frete Internacional (USD) para {origem}",
+                    min_value=0.0,
+                    value=valores.get("frete_internacional_usd", 0.0),
+                    key=f"frete_{origem}"
+                )
+            with col2:
+                nova_taxa = st.number_input(
+                    f"Taxas de Frete (BRL) para {origem}",
+                    min_value=0.0,
+                    value=valores.get("taxas_frete_brl", 0.0),
+                    key=f"taxa_{origem}"
+                )
+            frete_config[origem]["frete_internacional_usd"] = novo_frete
+            frete_config[origem]["taxas_frete_brl"] = nova_taxa
+        
+        if st.button("Salvar Configurações de Frete"):
+            save_frete_config(frete_config)
+            st.success("Configurações de frete salvas com sucesso!")
 
     # ============================
     # MÓDULO: SIMULADOR DE CENÁRIOS
