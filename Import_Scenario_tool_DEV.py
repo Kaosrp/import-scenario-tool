@@ -140,6 +140,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 # ============================
 # Funções de Formatação
 # ============================
