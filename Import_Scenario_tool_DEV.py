@@ -499,7 +499,7 @@ if module_selected == "Gerenciamento":
     # --- Aba 4: Gerenciamento de Produtos (NCM) ---
     with management_tabs[3]:
         st.subheader("Gerenciamento de Produtos (NCM)")
-        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
+        st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, PIS e Cofins.")
     
         st.markdown('<div id="product_form"></div>', unsafe_allow_html=True)
         
@@ -557,7 +557,7 @@ if module_selected == "Gerenciamento":
                 key="ipi_base"
             )
         
-        st.markdown("**Pis:**")
+        st.markdown("**PIS:**")
         col_pis = st.columns(2)
         with col_pis[0]:
             pis_rate = st.number_input(
