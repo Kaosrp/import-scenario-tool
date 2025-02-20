@@ -391,7 +391,7 @@ if module_selected == "Gerenciamento":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione uma filial primeiro.")
         else:
-            filial_for_field = st.selectbox("Selecione a Filial", list(data.keys()), key="gerenciamento_filial")
+            filial_for_field = st.selectbox("Selecione a filial", list(data.keys()), key="gerenciamento_filial")
             if not data[filial_for_field]:
                 st.info("Nenhum cenário cadastrado para essa filial. Adicione um cenário primeiro.")
             else:
@@ -764,7 +764,7 @@ elif module_selected == "Simulador de Cenários":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
-            filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
+            filial_selected = st.selectbox("Selecione a filial", list(data.keys()))
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob")
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
