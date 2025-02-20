@@ -853,7 +853,7 @@ elif module_selected == "Simulador de Cenários":
                 costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
             
             if costs:
-                df = pd.DataFrame(costs).T.sort_values(by="Custo Final")
+                df = pd.DataFrame(costs).T.sort_values(by="Custo final")
                 df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                 st.write("### Comparação por filial única")
                 st.dataframe(df_display)
