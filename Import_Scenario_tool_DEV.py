@@ -73,8 +73,8 @@ if module_selected == "Gerenciamento" and st.session_state.user_role != "Adminis
 # -----------------------------
 # Exemplo de continuação do app
 # -----------------------------
-st.write(f"Bem-vindo(a), {st.session_state.user_role}!")
-st.write(f"Módulo selecionado: {module_selected}")
+#st.write(f"Bem-vindo(a), {st.session_state.user_role}!")
+#st.write(f"Módulo selecionado: {module_selected}")
 
 # ============================
 # Configuração de Fretes (Arquivo JSON)
