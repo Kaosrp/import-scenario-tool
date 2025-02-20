@@ -685,7 +685,7 @@ if module_selected == "Gerenciamento":
                     del origens_config[origem]
                     save_origens_config(origens_config)
                     st.success(f"Origem '{origem}' excluída!")
-                    st.experimental_rerun()
+                    #st.experimental_rerun()
                     
         # Se estiver em modo de edição, exibe o formulário de edição
         if "edit_origem" in st.session_state:
