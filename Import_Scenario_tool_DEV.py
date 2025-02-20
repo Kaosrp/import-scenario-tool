@@ -142,9 +142,12 @@ st.markdown(
         background-color: #fcf0f0; /* vermelho claro no hover */
         transform: scale(1.05);
     }
+
     </style>
+    <img src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-1024x312.png" class="logo">
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
+      
 )
 
 # ============================
