@@ -34,6 +34,8 @@ st.markdown(
 USUARIOS = {
     "admin": {"password": "adminpass", "role": "Administrador"},
     "usuario": {"password": "userpass", "role": "Usuário"}
+    "silviara.nobre": {"password": "okubo@2024", "role": "Usuário"}
+    "matheus.martins": {"password": "okubo@2024", "role": "Administrador"}
 }
 
 # -----------------------------
