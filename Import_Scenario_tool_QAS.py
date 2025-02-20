@@ -374,7 +374,12 @@ if module_selected == "Gerenciamento":
                     else:
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
-                            "Marinha Mercante": 8,
+                            "Marinha Mercante": { 
+                                "type": "percentage",
+                                "rate": 0.08,  
+                                "base": "Frete Internacional",
+                                "rate_by_occupancy": False
+                            }    
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
