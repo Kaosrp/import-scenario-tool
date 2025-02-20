@@ -10,27 +10,27 @@ import io
 # Logo
 # -----------------------------
 # Injetar o CSS para posicionar o logo
-st.markdown(
-    """
-    <style>
-    .fixed-logo {
-      position: fixed;
-      top: 20px;
-      right: 1000px;
-      width: 52px;
-      height: auto;
-      z-index: 9999;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+#st.markdown(
+  #  """
+  #  <style>
+  #  .fixed-logo {
+  #    position: fixed;
+  #    top: 20px;
+  #    right: 1000px;
+  #    width: 52px;
+  #    height: auto;
+  #    z-index: 9999;
+  #  }
+  #  </style>
+  #  """,
+  #  unsafe_allow_html=True
+#)
 
 # Exibir o logo no topo direito
-st.markdown(
-    '<img class="fixed-logo" src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-200x61.png" alt="Logo da Empresa">',
-    unsafe_allow_html=True
-)
+#st.markdown(
+ #   '<img class="fixed-logo" src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-200x61.png" alt="Logo da Empresa">',
+ #   unsafe_allow_html=True
+#)
 
 # -----------------------------
 # Definição dos usuários
