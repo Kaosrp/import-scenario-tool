@@ -35,6 +35,7 @@ USUARIOS = {
     "admin": {"password": "adminpass", "role": "Administrador"},
     "usuario": {"password": "userpass", "role": "Usuário"},
     "silviara.nobre": {"password": "okubo@2024", "role": "Usuário"},
+    "tays.okubo": {"password": "okubo@2024", "role": "Administrador"},
     "matheus.martins": {"password": "okubo@2024", "role": "Administrador"}
 }
 
@@ -373,8 +374,12 @@ if module_selected == "Gerenciamento":
                     else:
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
-                            "ICMS": 0,
-                            "IPI": 0,
+                            "Marinha Mercante": { 
+                                "type": "percentage",
+                                "rate": 0.08,  
+                                "base": "Frete Internacional",
+                                "rate_by_occupancy": False
+                            },    
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
@@ -475,7 +480,7 @@ if module_selected == "Gerenciamento":
                     else:
                         field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
                         base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
-                    rate_occ_new = st.checkbox("Ratear pela Ocupação do Contêiner?", value=False, key=f"rate_occ_new_{new_field}")
+                    rate_occ_new = st.checkbox("Ratear pela ocupação do contêiner?", value=False, key=f"rate_occ_new_{new_field}")
                     if st.button("Adicionar Campo", key=f"adicionar_{new_field}"):
                         new_field_stripped = new_field.strip()
                         if new_field_stripped in scenario_fields:
@@ -742,7 +747,7 @@ if module_selected == "Gerenciamento":
 # MÓDULO: SIMULADOR DE CENÁRIOS
 # ============================
 elif module_selected == "Simulador de Cenários":
-    st.header("DEV - Simulador de Cenários de Importação")
+    st.header("QAS - Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador único", "Comparação multifilial"], index=0)
     processo_nome = st.text_input("Nome do processo", key="nome_processo_input")
     
