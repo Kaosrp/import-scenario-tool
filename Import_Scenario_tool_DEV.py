@@ -5,6 +5,26 @@ import os
 from datetime import datetime
 import io
 
+
+# -----------------------------
+# Logo
+# -----------------------------
+st.markdown(
+    """
+    <style>
+    .logo {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 150px; /* ajuste o tamanho conforme necessário */
+      z-index: 100;
+    }
+    </style>
+    <img src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-1024x312.png" class="logo">
+    """,
+    unsafe_allow_html=True
+)
+
 # -----------------------------
 # Definição dos usuários
 # -----------------------------
