@@ -879,7 +879,7 @@ elif module_selected == "Simulador de Cenários":
                 for scenario in costs:
                     costs[scenario]["II"] = product_taxes.get("imposto_importacao", 0)
                     costs[scenario]["IPI"] = product_taxes.get("ipi", 0)
-                    costs[scenario]["Pis"] = product_taxes.get("pis", 0)
+                    costs[scenario]["PIS"] = product_taxes.get("pis", 0)
                     costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
             for scenario in costs:
                 costs[scenario]["Taxas frete (BRL) rateadas"] = taxas_frete_brl_rateada
