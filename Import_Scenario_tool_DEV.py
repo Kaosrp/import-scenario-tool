@@ -767,7 +767,7 @@ elif module_selected == "Simulador de Cenários":
             filial_selected = st.selectbox("Selecione a filial", list(data.keys()))
             modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob")
             col1, col2 = st.columns(2)
-            if modo_valor_fob == "Valor Total":
+            if modo_valor_fob == "Valor total":
                 with col1:
                     valor_fob_usd = st.number_input("Valor FOB da mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd")
                     quantidade = 1.0
@@ -938,7 +938,7 @@ elif module_selected == "Simulador de Cenários":
                 st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
                 modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob_multi")
                 col1, col2 = st.columns(2)
-                if modo_valor_fob == "Valor Total":
+                if modo_valor_fob == "Valor total":
                     with col1:
                         valor_fob_usd = st.number_input("Valor FOB da mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd_multi")
                         quantidade = 1.0
