@@ -16,8 +16,8 @@ st.markdown(
     .fixed-logo {
       position: fixed;
       top: 10px;
-      right: 10px;
-      width: 150px;
+      right: 15px;
+      width: 85px;
       z-index: 9999;
     }
     </style>
