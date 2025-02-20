@@ -936,7 +936,7 @@ elif module_selected == "Simulador de Cenários":
             filiais_multi = st.multiselect("Selecione as Filiais para comparar", list(data.keys()))
             if filiais_multi:
                 st.markdown("Defina os parâmetros (aplicados a todas as filiais):")
-                modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"], key="modo_valor_fob_multi")
+                modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob_multi")
                 col1, col2 = st.columns(2)
                 if modo_valor_fob == "Valor Total":
                     with col1:
