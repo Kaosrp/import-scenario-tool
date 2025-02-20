@@ -379,7 +379,7 @@ if module_selected == "Gerenciamento":
                                 "rate": 0.08,  
                                 "base": "Frete Internacional",
                                 "rate_by_occupancy": False
-                            }    
+                            },    
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
