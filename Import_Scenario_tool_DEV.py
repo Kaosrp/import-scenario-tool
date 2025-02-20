@@ -702,7 +702,7 @@ if module_selected == "Gerenciamento":
                 save_origens_config(origens_config)
                 st.success("Origem atualizada com sucesso!")
                 del st.session_state.edit_origem
-                st.experimental_rerun()
+                #st.experimental_rerun()
 
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
