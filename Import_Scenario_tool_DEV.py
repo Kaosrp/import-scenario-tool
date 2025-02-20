@@ -324,7 +324,7 @@ if module_selected == "Gerenciamento":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione uma filial na aba Filiais!")
         else:
-            filial_select = st.selectbox("Selecione a Filial", list(data.keys()), key="select_filial_for_scenario")
+            filial_select = st.selectbox("Selecione a filial", list(data.keys()), key="select_filial_for_scenario")
             scenarios_list = list(data[filial_select].keys())
             st.markdown("### Cenários existentes:")
             if scenarios_list:
