@@ -15,10 +15,11 @@ st.markdown(
     <style>
     .fixed-logo {
       position: fixed;
-      top: 1px;
-      right: 5px;
-      width: 5px;
-      z-index: 999;
+      top: 20px;
+      right: 1000px;
+      width: 52px;
+      height: auto;
+      z-index: 9999;
     }
     </style>
     """,
