@@ -858,7 +858,7 @@ elif module_selected == "Simulador de Cenários":
                 st.write("### Comparação por filial única")
                 st.dataframe(df_display)
                 best_scenario = df.index[0]
-                best_cost = df.iloc[0]['Custo Final']
+                best_cost = df.iloc[0]['Custo final']
                 st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo final de **R$ {format_brl(best_cost)}**.")
                 
                 if st.button("Salvar Simulação no Histórico"):
@@ -984,9 +984,9 @@ elif module_selected == "Simulador de Cenários":
                             "Filial": filial,
                             "Cenário": scenario,
                             "Valor FOB": valor_fob_usd,
-                            "Frete Internacional": frete_internacional_usd_rateado,
-                            "Valor CIF com Seguro": valor_cif,
-                            "Custo Final": final_cost
+                            "Frete internacional": frete_internacional_usd_rateado,
+                            "Valor CIF com seguro": valor_cif,
+                            "Custo final": final_cost
                         }
                         if quantidade > 0:
                             multi_costs[(filial, scenario)]["Custo Unitário Final"] = final_cost / quantidade
@@ -1021,14 +1021,14 @@ elif module_selected == "Simulador de Cenários":
                             multi_costs[key]["IPI"] = product_taxes.get("ipi", 0)
                             multi_costs[key]["Pis"] = product_taxes.get("pis", 0)
                             multi_costs[key]["Cofins"] = product_taxes.get("cofins", 0)
-                    df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo Final")
+                    df_multi = pd.DataFrame(multi_costs).T.sort_values(by="Custo final")
                     df_display = df_multi.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                     st.write("### Comparação global (multifilial)")
                     st.dataframe(df_display)
                     best_row = df_multi.iloc[0]
                     best_filial = best_row["Filial"]
                     best_scenario = best_row["Cenário"]
-                    best_cost = best_row["Custo Final"]
+                    best_cost = best_row["Custo final"]
                     st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo final de **R$ {format_brl(best_cost)}**.")
                     
                     if st.button("Salvar comparação no histórico"):
@@ -1088,7 +1088,7 @@ elif module_selected == "Histórico de Simulações":
             if "best_scenario" in record:
                 expander_title += f" | Melhor: {record['best_scenario']}"
             if "best_cost" in record:
-                expander_title += f" | Custo Final: R$ {format_brl(record['best_cost'])}"
+                expander_title += f" | Custo final: R$ {format_brl(record['best_cost'])}"
             
             if record.get("multi_comparison", False):
                 expander_title += " (Comparação multifilial)"
