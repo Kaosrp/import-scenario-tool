@@ -48,7 +48,7 @@ if "authenticated" not in st.session_state:
 # Tela de Login
 # -----------------------------
 if not st.session_state.authenticated:
-    st.title("Login")
+    st.title("###Login")
     username = st.text_input("Usuário", key="login_username")
     password = st.text_input("Senha", type="password", key="login_password")
     if st.button("Entrar", key="login_button"):
