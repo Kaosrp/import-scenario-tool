@@ -709,7 +709,7 @@ if module_selected == "Gerenciamento":
 # ============================
 elif module_selected == "Simulador de Cenários":
     st.header("QAS - Simulador de Cenários de Importação")
-    sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
+    sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador único", "Comparação multifilial"], index=0)
     processo_nome = st.text_input("Nome do processo", key="nome_processo_input")
     
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
@@ -728,7 +728,7 @@ elif module_selected == "Simulador de Cenários":
         st.info("Nenhum produto cadastrado. Cadastre um produto em 'Produtos'.")
         product = None
         
-    if sim_mode == "Simulador Único":
+    if sim_mode == "Simulador único":
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
