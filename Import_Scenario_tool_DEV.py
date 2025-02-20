@@ -9,19 +9,25 @@ import io
 # -----------------------------
 # Logo
 # -----------------------------
+# Injetar o CSS para posicionar o logo
 st.markdown(
     """
     <style>
-    .logo {
+    .fixed-logo {
       position: fixed;
       top: 10px;
       right: 10px;
-      width: 150px; /* ajuste o tamanho conforme necessário */
-      z-index: 100;
+      width: 150px;
+      z-index: 9999;
     }
     </style>
-    <img src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-1024x312.png" class="logo">
     """,
+    unsafe_allow_html=True
+)
+
+# Exibir o logo no topo direito
+st.markdown(
+    '<img class="fixed-logo" src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-1024x312.png" alt="Logo da Empresa">',
     unsafe_allow_html=True
 )
 
