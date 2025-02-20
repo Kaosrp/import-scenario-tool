@@ -17,7 +17,7 @@ st.markdown(
       position: fixed;
       top: 20px;
       right: 30px;
-      width: 150px;
+      width: 15px;
       z-index: 9999;
     }
     </style>
