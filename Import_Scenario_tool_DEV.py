@@ -631,14 +631,24 @@ if module_selected == "Gerenciamento":
                 for ncm, prod in filtered_products.items():
                     col1, col2 = st.columns([7, 3])
                     with col1:
+                        #product_html = f"""
+                        #<div style="
+                        #    border: 1px solid #e0e0e0; 
+                        #    border-radius: 8px; 
+                        #    padding: 15px; 
+                        #    background: #fff; 
+                        #    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                        #    margin-bottom: 15px;">
+                        #    <h4 style="margin-bottom: 10px; color: #333;">NCM: {ncm}</h4>
+                        #    <p style="margin: 0;"><strong>Descrição:</strong> {prod.get('descricao', 'N/A')}</p>
+                        #    <p style="margin: 0;"><strong>II:</strong> {prod.get('imposto_importacao', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('imposto_importacao', {}).get('base', 'N/A')})</p>
+                        #    <p style="margin: 0;"><strong>IPI:</strong> {prod.get('ipi', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('ipi', {}).get('base', 'N/A')})</p>
+                        #    <p style="margin: 0;"><strong>Pis:</strong> {prod.get('pis', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('pis', {}).get('base', 'N/A')})</p>
+                        #    <p style="margin: 0;"><strong>Cofins:</strong> {prod.get('cofins', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('cofins', {}).get('base', 'N/A')})</p>
+                        #</div>
+                        #"""
                         product_html = f"""
-                        <div style="
-                            border: 1px solid #e0e0e0; 
-                            border-radius: 8px; 
-                            padding: 15px; 
-                            background: #fff; 
-                            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-                            margin-bottom: 15px;">
+                        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fff; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px;">
                             <h4 style="margin-bottom: 10px; color: #333;">NCM: {ncm}</h4>
                             <p style="margin: 0;"><strong>Descrição:</strong> {prod.get('descricao', 'N/A')}</p>
                             <p style="margin: 0;"><strong>II:</strong> {prod.get('imposto_importacao', {}).get('rate', 0)*100:.2f}% (Base: {prod.get('imposto_importacao', {}).get('base', 'N/A')})</p>
