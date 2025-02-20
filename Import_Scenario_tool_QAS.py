@@ -374,6 +374,7 @@ if module_selected == "Gerenciamento":
                     else:
                         data[filial_select][new_scenario_stripped] = {
                             "Frete rodoviário": 0,
+                            "Marinha Mercante": 8,
                             "Taxa MAPA": 0,
                             "Taxas Porto Seco": 0,
                             "Desova EAD": 0,
