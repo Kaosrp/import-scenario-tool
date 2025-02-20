@@ -480,7 +480,7 @@ if module_selected == "Gerenciamento":
                     else:
                         field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
                         base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
-                    rate_occ_new = st.checkbox("Ratear pela Ocupação do Contêiner?", value=False, key=f"rate_occ_new_{new_field}")
+                    rate_occ_new = st.checkbox("Ratear pela ocupação do contêiner?", value=False, key=f"rate_occ_new_{new_field}")
                     if st.button("Adicionar Campo", key=f"adicionar_{new_field}"):
                         new_field_stripped = new_field.strip()
                         if new_field_stripped in scenario_fields:
