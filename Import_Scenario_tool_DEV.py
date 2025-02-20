@@ -710,7 +710,7 @@ if module_selected == "Gerenciamento":
 elif module_selected == "Simulador de Cenários":
     st.header("QAS - Simulador de Cenários de Importação")
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
-    processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
+    processo_nome = st.text_input("Nome do processo", key="nome_processo_input")
     
     # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
@@ -721,7 +721,7 @@ elif module_selected == "Simulador de Cenários":
             options.append(label)
             mapping[label] = ncm
 
-        selected_label = st.selectbox("Selecione o Produto (NCM)", options)
+        selected_label = st.selectbox("Selecione o produto (NCM)", options)
         product_key = mapping[selected_label]
         product = products[product_key]
     else:
@@ -733,18 +733,18 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a Filial", list(data.keys()))
-            modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor Total", "Unitário × Quantidade"], key="modo_valor_fob")
+            modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob")
             col1, col2 = st.columns(2)
             if modo_valor_fob == "Valor Total":
                 with col1:
-                    valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd")
+                    valor_fob_usd = st.number_input("Valor FOB da mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd")
                     quantidade = 1.0
                     valor_unit_fob_usd = 0.0
                 with col2:
                     st.write("Usando frete internacional configurado via origem")
             else:
                 with col1:
-                    valor_unit_fob_usd = st.number_input("Valor Unitário FOB (USD/unidade)", min_value=0.0, value=0.0, key="valor_unit_fob_usd")
+                    valor_unit_fob_usd = st.number_input("Valor unitário FOB (USD/unidade)", min_value=0.0, value=0.0, key="valor_unit_fob_usd")
                     quantidade = st.number_input("Quantidade", min_value=0.0, value=0.0, key="quantidade")
                     valor_fob_usd = valor_unit_fob_usd * quantidade
                 with col2:
@@ -753,7 +753,7 @@ elif module_selected == "Simulador de Cenários":
             # Seleção de Origem para obter os valores de frete e taxas
             origens_config = load_origens_config()
             if origens_config:
-                origem_selecionada = st.selectbox("Selecione a Origem do Material", list(origens_config.keys()), key="origem_selecionada")
+                origem_selecionada = st.selectbox("Selecione a origem do material", list(origens_config.keys()), key="origem_selecionada")
                 frete_internacional_usd = origens_config[origem_selecionada]["frete_internacional_usd"]
                 taxas_frete_brl = origens_config[origem_selecionada]["taxas_frete_brl"]
             else:
@@ -761,7 +761,7 @@ elif module_selected == "Simulador de Cenários":
                 frete_internacional_usd = 0.0
                 taxas_frete_brl = 0.0
             
-            percentual_ocupacao_conteiner = st.number_input("Percentual de Ocupação do Contêiner (%)", min_value=0.0, max_value=100.0, value=100.0, key="percentual_ocupacao")
+            percentual_ocupacao_conteiner = st.number_input("Percentual de ocupação do contêiner (%)", min_value=0.0, max_value=100.0, value=100.0, key="percentual_ocupacao")
             occupancy_fraction = percentual_ocupacao_conteiner / 100.0
             frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
             taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
@@ -812,9 +812,9 @@ elif module_selected == "Simulador de Cenários":
                     # Aqui adicionamos o valor do frete internacional no dataframe
                     costs[scenario] = {
                         "Valor FOB": valor_fob_usd,
-                        "Frete Internacional": frete_internacional_usd_rateado,
-                        "Valor CIF com Seguro": valor_cif,
-                        "Custo Final": final_cost
+                        "Frete internacional": frete_internacional_usd_rateado,
+                        "Valor CIF com seguro": valor_cif,
+                        "Custo final": final_cost
                     }
                     if quantidade > 0:
                         costs[scenario]["Custo Unitário Final"] = final_cost / quantidade
@@ -841,7 +841,7 @@ elif module_selected == "Simulador de Cenários":
                             costs[scenario][field] = conf
             
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
-                st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
+                st.write(f"Valor CIF calculado (com seguro): R$ {format_brl(valor_cif)}")
             
             if product:
                 for scenario in costs:
@@ -897,7 +897,7 @@ elif module_selected == "Simulador de Cenários":
                 st.warning("Nenhuma configuração encontrada para a filial selecionada. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
           
     else:
-        st.subheader("Comparação Multifilial")
+        st.subheader("Comparação multifilial")
         if not data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
@@ -908,7 +908,7 @@ elif module_selected == "Simulador de Cenários":
                 col1, col2 = st.columns(2)
                 if modo_valor_fob == "Valor Total":
                     with col1:
-                        valor_fob_usd = st.number_input("Valor FOB da Mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd_multi")
+                        valor_fob_usd = st.number_input("Valor FOB da mercadoria (USD)", min_value=0.0, value=0.0, key="valor_fob_usd_multi")
                         quantidade = 1.0
                         valor_unit_fob_usd = 0.0
                     with col2:
@@ -1031,7 +1031,7 @@ elif module_selected == "Simulador de Cenários":
                     best_cost = best_row["Custo Final"]
                     st.write(f"O melhor cenário geral é **{best_scenario}** da filial **{best_filial}** com custo final de **R$ {format_brl(best_cost)}**.")
                     
-                    if st.button("Salvar Comparação no Histórico"):
+                    if st.button("Salvar comparação no histórico"):
                         history = load_history()
                         simulation_record = {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1063,7 +1063,7 @@ elif module_selected == "Simulador de Cenários":
                         simulation_record["final_cost_com_impostos"] = best_cost
                         history.append(simulation_record)
                         save_history(history)
-                        st.success("Comparação Multifilial salva no histórico com sucesso!")
+                        st.success("Comparação multifilial salva no histórico com sucesso!")
                 else:
                     st.warning("Nenhuma configuração encontrada para as filiais selecionadas. Verifique se há cenários com valores > 0 ou se a base de custos está configurada.")
             else:
@@ -1091,7 +1091,7 @@ elif module_selected == "Histórico de Simulações":
                 expander_title += f" | Custo Final: R$ {format_brl(record['best_cost'])}"
             
             if record.get("multi_comparison", False):
-                expander_title += " (Comparação Multifilial)"
+                expander_title += " (Comparação multifilial)"
             else:
                 expander_title += f" | Filial: {record.get('filial', 'N/A')}"
             
@@ -1103,10 +1103,10 @@ elif module_selected == "Histórico de Simulações":
                     filiais = record.get("filiais_multi", [])
                     if filiais:
                         st.write("**Filiais Selecionadas:** " + ", ".join(filiais))
-                    st.write("**Melhor Filial:**", record.get("best_filial", "N/A"))
-                    st.write("**Melhor Cenário:**", record.get("best_scenario", "N/A"))
-                    st.write("**Custo Final:** R$", format_brl(record.get("best_cost", 0.0)))
-                    st.write("**Valor CIF com Seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
+                    st.write("**Melhor filial:**", record.get("best_filial", "N/A"))
+                    st.write("**Melhor cenário:**", record.get("best_scenario", "N/A"))
+                    st.write("**Custo final:** R$", format_brl(record.get("best_cost", 0.0)))
+                    st.write("**Valor CIF com seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
                     
                     results_dict = record.get("results", {})
                     if results_dict:
@@ -1118,10 +1118,10 @@ elif module_selected == "Histórico de Simulações":
                 
                 else:
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
-                    st.write(f"**Melhor Cenário:** {record.get('best_scenario', 'N/A')}")
-                    st.write(f"**Custo Final:** R$ {format_brl(record.get('best_cost', 0.0))}")
+                    st.write(f"**Melhor cenário:** {record.get('best_scenario', 'N/A')}")
+                    st.write(f"**Custo final:** R$ {format_brl(record.get('best_cost', 0.0))}")
                     st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
-                    st.write("**Valor CIF com Seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
+                    st.write("**Valor CIF com seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
                     # Aqui o dataframe já incluirá o valor do frete internacional, pois ele foi salvo
                     results_dict = record.get("results", {})
                     if results_dict:
