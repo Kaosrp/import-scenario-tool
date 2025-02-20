@@ -702,7 +702,7 @@ if module_selected == "Gerenciamento":
                 save_origens_config(origens_config)
                 st.success("Origem atualizada com sucesso!")
                 del st.session_state.edit_origem
-                #st.experimental_rerun()
+                st.experimental_rerun()
 
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
@@ -809,8 +809,10 @@ elif module_selected == "Simulador de Cenários":
                     base_cost = scenario_cost + taxas_frete_brl_rateada
                     final_cost = base_cost + total_product_taxes
                     
+                    # Aqui adicionamos o valor do frete internacional no dataframe
                     costs[scenario] = {
                         "Valor FOB": valor_fob_usd,
+                        "Frete Internacional": frete_internacional_usd_rateado,
                         "Valor CIF com Seguro": valor_cif,
                         "Custo Final": final_cost
                     }
@@ -837,7 +839,7 @@ elif module_selected == "Simulador de Cenários":
                             costs[scenario][field] = field_val
                         else:
                             costs[scenario][field] = conf
-                
+            
                 st.write(f"Seguro (0,15% do Valor FOB): R$ {format_brl(seguro)}")
                 st.write(f"Valor CIF Calculado (com Seguro): R$ {format_brl(valor_cif)}")
             
@@ -982,6 +984,7 @@ elif module_selected == "Simulador de Cenários":
                             "Filial": filial,
                             "Cenário": scenario,
                             "Valor FOB": valor_fob_usd,
+                            "Frete Internacional": frete_internacional_usd_rateado,
                             "Valor CIF com Seguro": valor_cif,
                             "Custo Final": final_cost
                         }
@@ -1119,7 +1122,7 @@ elif module_selected == "Histórico de Simulações":
                     st.write(f"**Custo Final:** R$ {format_brl(record.get('best_cost', 0.0))}")
                     st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
                     st.write("**Valor CIF com Seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
-                    
+                    # Aqui o dataframe já incluirá o valor do frete internacional, pois ele foi salvo
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame(results_dict).T
