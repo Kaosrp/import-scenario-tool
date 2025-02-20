@@ -27,7 +27,7 @@ st.markdown(
 
 # Exibir o logo no topo direito
 st.markdown(
-    '<img class="fixed-logo" src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-300x91.png" alt="Logo da Empresa">',
+    '<img class="fixed-logo" src="https://www.okubo.com.br/wp-content/uploads/2024/08/Design-sem-nome-7-e1723812969282-200x61.png" alt="Logo da Empresa">',
     unsafe_allow_html=True
 )
 
