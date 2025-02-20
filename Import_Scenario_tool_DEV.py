@@ -473,7 +473,6 @@ if module_selected == "Gerenciamento":
                 if scenario_fields:
                     for field in list(scenario_fields.keys()):
                         current = scenario_fields[field]
-                        # Determina os valores atuais com base no tipo do campo
                         if isinstance(current, dict):
                             current_type = current.get("type", "fixed")
                             current_fixed = float(current.get("value", 0)) if current_type == "fixed" else 0.0
@@ -528,22 +527,25 @@ if module_selected == "Gerenciamento":
                                 st.stop()
                 else:
                     st.info("Nenhum campo definido para este cenário.")
+                
                 st.markdown("### Adicionar Novo Campo")
+                # Atualização: formulário corrigido com submit button fixo
                 with st.form("form_novo_campo"):
                     new_field = st.text_input("Nome do Novo Campo", key="novo_campo")
-                    if new_field:
-                        st.markdown("Defina as opções para o novo campo:")
-                        field_type = st.selectbox("Tipo do Campo", ["fixed", "percentage"], key=f"tipo_novo_{new_field}")
-                        if field_type == "fixed":
-                            field_value = st.number_input("Valor Fixo", min_value=0.0, value=0.0, key=f"valor_novo_{new_field}")
-                        else:
-                            field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key=f"taxa_novo_{new_field}")
-                            base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key=f"base_novo_{new_field}")
-                        rate_occ_new = st.checkbox("Ratear pela ocupação do contêiner?", value=False, key=f"rate_occ_new_{new_field}")
-                        submit_novo_campo = st.form_submit_button("Adicionar Campo")
-                if new_field and submit_novo_campo:
+                    st.markdown("Defina as opções para o novo campo:")
+                    field_type = st.selectbox("Tipo do Campo", ["fixed", "percentage"], key="tipo_novo")
+                    if field_type == "fixed":
+                        field_value = st.number_input("Valor Fixo", min_value=0.0, value=0.0, key="valor_novo")
+                    else:
+                        field_rate = st.number_input("Taxa (%)", min_value=0.0, value=0.0, step=0.1, key="taxa_novo")
+                        base_option = st.selectbox("Base", ["Valor CIF", "Valor FOB", "Frete Internacional"], key="base_novo")
+                    rate_occ_new = st.checkbox("Ratear pela ocupação do contêiner?", value=False, key="rate_occ_new")
+                    submit_novo_campo = st.form_submit_button("Adicionar Campo")
+                if submit_novo_campo:
                     new_field_stripped = new_field.strip()
-                    if new_field_stripped in scenario_fields:
+                    if not new_field_stripped:
+                        st.warning("Digite um nome válido para o novo campo.")
+                    elif new_field_stripped in scenario_fields:
                         st.warning("Campo já existe nesse cenário!")
                     else:
                         if field_type == "fixed":
@@ -755,7 +757,6 @@ elif module_selected == "Simulador de Cenários":
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
         else:
             filial_selected = st.selectbox("Selecione a filial", list(config_data.keys()))
-            # Agrupando inputs em um formulário
             with st.form("form_simulacao_unica"):
                 modo_valor_fob = st.selectbox("Como deseja informar o Valor FOB?", ["Valor total", "Unitário × Quantidade"], key="modo_valor_fob")
                 col1, col2 = st.columns(2)
@@ -789,7 +790,6 @@ elif module_selected == "Simulador de Cenários":
                 frete_internacional_rateado = frete_internacional_usd * occupancy_fraction
                 taxas_frete_rateada = taxas_frete_brl * occupancy_fraction
                 taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0, key="taxa_cambio")
-                # Cálculo do CIF e seguro
                 valor_cif_base = (valor_fob_usd + frete_internacional_rateado) * taxa_cambio
                 seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
                 valor_cif = valor_cif_base + seguro
@@ -807,7 +807,6 @@ elif module_selected == "Simulador de Cenários":
                 else:
                     product_taxes = {"imposto_importacao": 0, "ipi": 0, "pis": 0, "cofins": 0}
                 costs = compute_simulation_costs(config_data, filial_selected, base_values, taxa_cambio, occupancy_fraction, taxas_frete_rateada, product_taxes)
-                # Exibe resultados em tabela
                 if costs:
                     df = pd.DataFrame(costs).T.sort_values(by="Custo final")
                     df_display = df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
@@ -817,7 +816,6 @@ elif module_selected == "Simulador de Cenários":
                     best_cost = df.iloc[0]['Custo final']
                     st.write(f"O melhor cenário para {filial_selected} é **{best_scenario}** com custo final de **R$ {format_brl(best_cost)}**.")
                     
-                    # Exibe gráfico interativo com Altair
                     df_reset = df.reset_index().rename(columns={"index": "Cenário"})
                     chart = alt.Chart(df_reset).mark_bar().encode(
                         x=alt.X("Cenário:N", sort=None),
@@ -860,7 +858,6 @@ elif module_selected == "Simulador de Cenários":
                     st.warning("Nenhuma configuração encontrada para a filial selecionada.")
                     
     else:
-        # Modo Comparação Multifilial
         st.subheader("Comparação multifilial")
         if not config_data:
             st.warning("Nenhuma filial cadastrada. Adicione filiais na aba Gerenciamento.")
@@ -1001,11 +998,13 @@ elif module_selected == "Histórico de Simulações":
                     st.write("**Melhor cenário:**", record.get("best_scenario", "N/A"))
                     st.write("**Custo final:** R$", format_brl(record.get("best_cost", 0.0)))
                     st.write("**Valor CIF com seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
+                    
                     results_dict = record.get("results", {})
                     if results_dict:
                         results_df = pd.DataFrame.from_dict(results_dict, orient="index")
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
+                
                 else:
                     st.write(f"**Filial:** {record.get('filial', 'N/A')}")
                     st.write(f"**Melhor cenário:** {record.get('best_scenario', 'N/A')}")
@@ -1017,10 +1016,10 @@ elif module_selected == "Histórico de Simulações":
                         results_df = pd.DataFrame(results_dict).T
                         results_df_display = results_df.applymap(lambda x: format_brl(x) if isinstance(x, (int, float)) else x)
                         st.dataframe(results_df_display)
+                
                 if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
                     sorted_history.remove(record)
                     save_history(sorted_history)
                     st.success("Registro excluído com sucesso!")
-
     else:
         st.info("Nenhuma simulação registrada no histórico.")
