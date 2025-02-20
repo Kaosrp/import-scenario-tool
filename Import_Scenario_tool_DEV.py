@@ -479,9 +479,6 @@ if module_selected == "Gerenciamento":
         st.subheader("Gerenciamento de Produtos (NCM)")
         st.write("Cadastre produtos com suas alíquotas de Imposto de Importação (II), IPI, Pis e Cofins.")
     
-        # ============================
-        # Formulário de Adição/ Edição (Topo)
-        # ============================
         st.markdown('<div id="product_form"></div>', unsafe_allow_html=True)
         
         edit_mode = st.session_state.get("edit_product", None)
@@ -653,6 +650,7 @@ if module_selected == "Gerenciamento":
         st.subheader("Gerenciamento de Origens")
         origens_config = load_origens_config()
 
+        # Formulário para adicionar nova origem
         nova_origem = st.text_input("Nova Origem", key="nova_origem")
         if st.button("Adicionar Origem"):
             if nova_origem.strip():
@@ -672,13 +670,39 @@ if module_selected == "Gerenciamento":
                 
         st.markdown("### Origens Configuradas:")
         for origem, values in origens_config.items():
-            col1, col2, col3 = st.columns([2, 2, 2])
+            col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
             with col1:
                 st.write(origem)
             with col2:
                 st.write(f"Frete Internacional: USD {values['frete_internacional_usd']}")
             with col3:
                 st.write(f"Taxas de Frete: BRL {values['taxas_frete_brl']}")
+            with col4:
+                if st.button("Editar", key=f"editar_{origem}"):
+                    st.session_state.edit_origem = origem
+            with col5:
+                if st.button("Excluir", key=f"excluir_{origem}"):
+                    del origens_config[origem]
+                    save_origens_config(origens_config)
+                    st.success(f"Origem '{origem}' excluída!")
+                    st.experimental_rerun()
+                    
+        # Se estiver em modo de edição, exibe o formulário de edição
+        if "edit_origem" in st.session_state:
+            origem_to_edit = st.session_state.edit_origem
+            st.markdown(f"### Editar Origem: {origem_to_edit}")
+            current_values = origens_config.get(origem_to_edit, {"frete_internacional_usd": 0.0, "taxas_frete_brl": 0.0})
+            new_frete_internacional = st.number_input("Frete Internacional (USD)", min_value=0.0, value=current_values["frete_internacional_usd"], key="edit_frete_internacional")
+            new_taxas_frete = st.number_input("Taxas de Frete (BRL)", min_value=0.0, value=current_values["taxas_frete_brl"], key="edit_taxas_frete")
+            if st.button("Salvar Alterações", key="salvar_edicao_origem"):
+                origens_config[origem_to_edit] = {
+                    "frete_internacional_usd": new_frete_internacional,
+                    "taxas_frete_brl": new_taxas_frete
+                }
+                save_origens_config(origens_config)
+                st.success("Origem atualizada com sucesso!")
+                del st.session_state.edit_origem
+                st.experimental_rerun()
 
 # ============================
 # MÓDULO: SIMULADOR DE CENÁRIOS
@@ -688,7 +712,7 @@ elif module_selected == "Simulador de Cenários":
     sim_mode = st.radio("Escolha o modo de Simulação", ["Simulador Único", "Comparação Multifilial"], index=0)
     processo_nome = st.text_input("Nome do Processo", key="nome_processo_input")
     
-    # Seleção de produto
+    # Seleção de produto (aplica-se tanto para simulação única quanto multifilial)
     if products:
         options = []
         mapping = {}
@@ -696,6 +720,7 @@ elif module_selected == "Simulador de Cenários":
             label = f"{ncm} - {prod.get('descricao', 'Sem descrição')}"
             options.append(label)
             mapping[label] = ncm
+
         selected_label = st.selectbox("Selecione o Produto (NCM)", options)
         product_key = mapping[selected_label]
         product = products[product_key]
