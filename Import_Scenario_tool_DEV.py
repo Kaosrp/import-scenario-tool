@@ -882,7 +882,7 @@ elif module_selected == "Simulador de Cenários":
                     costs[scenario]["Pis"] = product_taxes.get("pis", 0)
                     costs[scenario]["Cofins"] = product_taxes.get("cofins", 0)
             for scenario in costs:
-                costs[scenario]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
+                costs[scenario]["Taxas frete (BRL) rateadas"] = taxas_frete_brl_rateada
             
             if costs:
                 df = pd.DataFrame(costs).T.sort_values(by="Custo final")
@@ -1043,7 +1043,7 @@ elif module_selected == "Simulador de Cenários":
                             else:
                                 field_val = conf
                             multi_costs[(filial, scenario)][field] = field_val
-                        multi_costs[(filial, scenario)]["Taxas Frete (BRL) Rateadas"] = taxas_frete_brl_rateada
+                        multi_costs[(filial, scenario)]["Taxas frete (BRL) rateadas"] = taxas_frete_brl_rateada
                 if multi_costs:
                     if product:
                         product_taxes = calculate_product_taxes(product, base_values, taxa_cambio, occupancy_fraction)
