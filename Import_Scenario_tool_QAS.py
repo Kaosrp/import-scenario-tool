@@ -4,8 +4,6 @@ import json
 import os
 from datetime import datetime
 import io
-import plotly.express as px
-
 
 
 # -----------------------------
@@ -1206,81 +1204,6 @@ def draw_cost_charts(record):
         labels={'x': 'Componente', 'y': 'Valor (BRL)'}
     )
     st.plotly_chart(fig_bar, use_container_width=True)
-
-# ===============================
-# MÓDULO: HISTÓRICO DE SIMULAÇÕES
-# ===============================
-st.header("Histórico de Simulações")
-history = load_history()
-
-if history:
-    sorted_history = sorted(
-        history,
-        key=lambda r: datetime.strptime(r["timestamp"], "%Y-%m-%d %H:%M:%S"),
-        reverse=True
-    )
-    st.markdown("### Registros de Simulação")
-    
-    for record in sorted_history:
-        # Monta o título do expander com informações resumidas do registro
-        expander_title = f"{record['timestamp']}"
-        if "best_scenario" in record:
-            expander_title += f" | Melhor: {record['best_scenario']}"
-        if "best_cost" in record:
-            expander_title += f" | Custo final: R$ {format_brl(record['best_cost'])}"
-        if record.get("multi_comparison", False):
-            expander_title += " (Comparação multifilial)"
-        else:
-            expander_title += f" | Filial: {record.get('filial', 'N/A')}"
-        
-        with st.expander(expander_title):
-            st.write(f"**Processo:** {record.get('processo_nome', 'N/A')}")
-            st.write(f"**Data/Hora:** {record['timestamp']}")
-            
-            if record.get("multi_comparison", False):
-                filiais = record.get("filiais_multi", [])
-                if filiais:
-                    st.write("**Filiais Selecionadas:** " + ", ".join(filiais))
-                st.write("**Melhor filial:**", record.get("best_filial", "N/A"))
-                st.write("**Melhor cenário:**", record.get("best_scenario", "N/A"))
-                st.write("**Custo final:** R$", format_brl(record.get("best_cost", 0.0)))
-                st.write("**Valor CIF com seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
-                results_dict = record.get("results", {})
-                if results_dict:
-                    results_df = pd.DataFrame.from_dict(results_dict, orient="index")
-                    results_df_display = results_df.applymap(
-                        lambda x: format_brl(x) if isinstance(x, (int, float)) else x
-                    )
-                    st.dataframe(results_df_display)
-            else:
-                st.write(f"**Filial:** {record.get('filial', 'N/A')}")
-                st.write(f"**Melhor cenário:** {record.get('best_scenario', 'N/A')}")
-                st.write(f"**Custo final:** R$ {format_brl(record.get('best_cost', 0.0))}")
-                st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
-                st.write("**Valor CIF com seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
-                results_dict = record.get("results", {})
-                if results_dict:
-                    results_df = pd.DataFrame(results_dict).T
-                    results_df_display = results_df.applymap(
-                        lambda x: format_brl(x) if isinstance(x, (int, float)) else x
-                    )
-                    st.dataframe(results_df_display)
-            
-            st.markdown("#### Dashboard de Análise de Custo")
-            draw_cost_charts(record)
-            
-            if st.button("Excluir este registro", key=f"delete_{record['timestamp']}"):
-                sorted_history.remove(record)  
-                st.session_state.history = sorted_history
-                save_history(st.session_state.history)
-                st.success("Registro excluído com sucesso!")
-else:
-    st.info("Nenhuma simulação registrada no histórico.")
-
-
-
-
-
 
 # ===============================
 # MÓDULO: HISTÓRICO DE SIMULAÇÕES
