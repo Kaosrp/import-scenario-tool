@@ -804,7 +804,7 @@ elif module_selected == "Simulador de Cenários":
             frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
             taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
            # taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0, key="taxa_cambio")
-            taxa_cambio_input = st.text_input(
+            taxa_cambio_input = st.number_input(
                 "Taxa de Câmbio (USD -> BRL)", 
                 placeholder="Digite a taxa de câmbio", 
                 key="taxa_cambio"
