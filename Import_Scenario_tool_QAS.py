@@ -803,7 +803,23 @@ elif module_selected == "Simulador de Cenários":
             occupancy_fraction = percentual_ocupacao_conteiner / 100.0
             frete_internacional_usd_rateado = frete_internacional_usd * occupancy_fraction
             taxas_frete_brl_rateada = taxas_frete_brl * occupancy_fraction
-            taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0, key="taxa_cambio")
+           # taxa_cambio = st.number_input("Taxa de Câmbio (USD -> BRL)", min_value=0.0, value=5.0, key="taxa_cambio")
+            taxa_cambio_input = st.text_input(
+                "Taxa de Câmbio (USD -> BRL)", 
+                placeholder="Digite a taxa de câmbio", 
+                key="taxa_cambio"
+            )
+            if not taxa_cambio_input:
+                st.error("Informe a taxa de câmbio!")
+                st.stop()
+            try:
+                taxa_cambio = float(taxa_cambio_input)
+                if taxa_cambio <= 0:
+                    st.error("A taxa de câmbio deve ser um número maior que zero.")
+                    st.stop()
+            except ValueError:
+                st.error("Taxa de câmbio inválida. Por favor, informe um número.")
+                st.stop()
             
             valor_cif_base = (valor_fob_usd + frete_internacional_usd_rateado) * taxa_cambio
             seguro = 0.0015 * (valor_fob_usd * taxa_cambio)
