@@ -1161,6 +1161,7 @@ elif module_selected == "Histórico de Simulações":
                     st.write("**Melhor cenário:**", record.get("best_scenario", "N/A"))
                     st.write("**Custo final:** R$", format_brl(record.get("best_cost", 0.0)))
                     st.write("**Valor CIF com seguro:** R$", format_brl(record.get("valor_cif", 0.0)))
+                    st.write("**Taxa de câmbio (USD):** R$", format_brl(record.get("taxa_cambio", 0.0)))
                     
                     results_dict = record.get("results", {})
                     if results_dict:
@@ -1176,6 +1177,7 @@ elif module_selected == "Histórico de Simulações":
                     st.write(f"**Custo final:** R$ {format_brl(record.get('best_cost', 0.0))}")
                     st.write("**Valor FOB:** R$ ", format_brl(record.get("valor_fob_usd", 0.0)))
                     st.write("**Valor CIF com seguro:** R$ ", format_brl(record.get("valor_cif", 0.0)))
+                    st.write("**Taxa de câmbio (USD):** R$", format_brl(record.get("taxa_cambio", 0.0)))
                     # Aqui o dataframe já incluirá o valor do frete internacional, pois ele foi salvo
                     results_dict = record.get("results", {})
                     if results_dict:
